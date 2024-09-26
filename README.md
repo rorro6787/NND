@@ -13,7 +13,7 @@
     <a href="https://github.com/rorro6787/MRI-Neurodegenerative-Disease-Detection/blob/main/images/BrainModeshape-e2f06d31641b4a56bfd50aa85596b82c.png" target="_blank">
       <img width="33%" src="https://github.com/rorro6787/MRI-Neurodegenerative-Disease-Detection/blob/main/images/BrainModeshape-e2f06d31641b4a56bfd50aa85596b82c.png" alt="Image 2" style="display: inline-block; margin: 0 80px;"></a>
     <a href="https://github.com/rorro6787/MRI-Neurodegenerative-Disease-Detection/blob/main/images/Sagittal-a-3D-FLAIR-and-the-corresponding-coronal-MPR-b-of-an-FD-patient-with-a.png" target="_blank">
-      <img width="33%" height="187px" src="https://github.com/rorro6787/MRI-Neurodegenerative-Disease-Detection/blob/main/images/Sagittal-a-3D-FLAIR-and-the-corresponding-coronal-MPR-b-of-an-FD-patient-with-a.png" alt="Image 3" style="display: inline-block; margin: 0 80px;"></a>
+      <img width="33%" height="154px" src="https://github.com/rorro6787/MRI-Neurodegenerative-Disease-Detection/blob/main/images/Sagittal-a-3D-FLAIR-and-the-corresponding-coronal-MPR-b-of-an-FD-patient-with-a.png" alt="Image 3" style="display: inline-block; margin: 0 80px;"></a>
   </p>
 </div>
 
