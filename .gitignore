@@ -1,3 +1,5 @@
 venv/
 src/MSLesSeg-Dataset
 src/path.txt
+src/yolov8n.pt
+images/predict*
