@@ -8,11 +8,11 @@ from MRI_system.script import try_YOLOv8
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# Configuración para la carga de archivos
+# Configuration for file uploads
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Asegurarse de que el directorio de carga existe
+# Ensure the upload directory exists
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
@@ -27,22 +27,22 @@ def receive_data():
 
 @app.route('/api/upload', methods=['POST'])
 def upload_image():
-    # Verifica si hay un archivo en la solicitud
+    # Check if there is a file in the request
     if 'image' not in request.files:
         return jsonify(error="No file part"), 400
     
     file = request.files['image']
     
-    # Si el usuario no selecciona un archivo, el navegador puede enviar un archivo vacío
+    # If the user does not select a file, the browser may submit an empty file
     if file.filename == '':
         return jsonify(error="No selected file"), 400
     
-    # Guardar el archivo de forma segura
+    # Save the file securely
     filename = secure_filename(file.filename)
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
     image_res_path = try_YOLOv8(os.path.join(os.getcwd(), file_path))
-    # Devolver el archivo guardado
+    # Return the saved file
     return send_file(os.path.join(image_res_path, filename), mimetype='image/jpeg')
 
 if __name__ == '__main__':

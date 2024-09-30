@@ -4,41 +4,41 @@ from ultralytics import YOLO
 import os
 
 def show_slices():
-    # Cargar el archivo .nii
-    nii_file = 'path'  # Cambia esto al nombre de tu archivo
+    # Load the .nii file
+    nii_file = 'path'  # Change this to your file name
     img = nib.load(nii_file)
 
-    # Obtener los datos de imagen como una matriz numpy 3D
+    # Get the image data as a 3D numpy array
     data = img.get_fdata()
 
-    # Ver las dimensiones de la imagen 3D
-    print("Dimensiones de la imagen 3D:", data.shape)
+    # View the dimensions of the 3D image
+    print("3D image dimensions:", data.shape)
 
-    # Extraer proyecciones 2D a lo largo de diferentes ejes
-    # Proyección axial (horizontal, de arriba a abajo)
-    axial_slice = data[:, :, data.shape[2] // 2]  # Toma una sección en el medio
-    print("Dimensiones de la proyección axial:", axial_slice.shape)
+    # Extract 2D projections along different axes
+    # Axial projection (horizontal, top to bottom)
+    axial_slice = data[:, :, data.shape[2] // 2]  # Take a section in the middle
+    print("Axial projection dimensions:", axial_slice.shape)
 
-    # Proyección sagital (vista lateral)
-    sagittal_slice = data[data.shape[0] // 2, :, :]  # Toma una sección en el medio
+    # Sagittal projection (side view)
+    sagittal_slice = data[data.shape[0] // 2, :, :]  # Take a section in the middle
 
-    # Proyección coronal (frontal)
-    coronal_slice = data[:, data.shape[1] // 2, :]  # Toma una sección en el medio
+    # Coronal projection (frontal)
+    coronal_slice = data[:, data.shape[1] // 2, :]  # Take a section in the middle
 
-    # Crear la figura y mostrar las tres proyecciones
+    # Create the figure and display the three projections
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-    # Mostrar la proyección axial
+    # Display the axial projection
     axes[0].imshow(axial_slice.T, cmap="gray", origin="lower")
-    axes[0].set_title('Axial (Vista superior)')
+    axes[0].set_title('Axial (Top view)')
 
-    # Mostrar la proyección sagital
+    # Display the sagittal projection
     axes[1].imshow(sagittal_slice.T, cmap="gray", origin="lower")
-    axes[1].set_title('Sagital (Vista lateral)')
+    axes[1].set_title('Sagittal (Side view)')
 
-    # Mostrar la proyección coronal
+    # Display the coronal projection
     axes[2].imshow(coronal_slice.T, cmap="gray", origin="lower")
-    axes[2].set_title('Coronal (Vista frontal)')
+    axes[2].set_title('Coronal (Frontal view)')
 
     plt.show()
 
@@ -51,7 +51,8 @@ def try_YOLOv8(image_name: str) -> str:
 
     # Perform inference
     results = model(img, save = True, project=os.path.join(os.getcwd(), '..', 'images'), verbose=False)
-    # Where is the output image?
+    
+    # Return the path to the saved image
     return results[0].save_dir
 
 if __name__ == "__main__":

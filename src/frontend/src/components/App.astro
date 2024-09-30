@@ -7,7 +7,7 @@
   MRI Brain Disease Detection System
 </h1>
 
-<!-- Formulario para cargar una imagen -->
+<!-- Form to upload an image -->
 <form class="mt-8 flex flex-col items-center" id="image-upload-form" enctype="multipart/form-data">
   <label class="mb-2 text-lg font-semibold text-gray-800 dark:text-gray-300">
     Upload an Image:
@@ -27,12 +27,12 @@
   </button>
 </form>
 
-<!-- Contenedor para mostrar la imagen -->
+<!-- Container to display the image -->
 <div id="image-preview" class="mt-8 hidden">
   <h2 class="text-2xl font-semibold text-gray-800 dark:text-white">Image Preview:</h2>
-  <div class="flex space-x-4"> <!-- Flexbox para mostrar las imágenes lado a lado -->
+  <div class="flex space-x-4"> <!-- Flexbox to display images side by side -->
     <img id="user-image" src="" alt="Uploaded Image" class="mt-4 max-w-xs rounded-md shadow-md" />
-    <img id="server-image" src="" alt="Processed Image from Server" class="mt-4 max-w-xs rounded-md shadow-md" /> <!-- Segunda imagen -->
+    <img id="server-image" src="" alt="Processed Image from Server" class="mt-4 max-w-xs rounded-md shadow-md" /> <!-- Second image -->
   </div>
 </div>
 
@@ -44,15 +44,15 @@
     const serverImage = document.getElementById('server-image') as HTMLImageElement; // Type assertion
 
     form.addEventListener('submit', async (event) => {
-      event.preventDefault(); // Evitar la recarga de la página
-      const formData = new FormData(form); // Crear un objeto FormData con los datos del formulario
+      event.preventDefault(); // Prevent the page from reloading
+      const formData = new FormData(form); // Create a FormData object with the form data
 
       // Obtener el archivo de imagen subido
-      const fileInput = form.elements.namedItem('image') as HTMLInputElement; // Obtener el campo de imagen
-      const userFile = fileInput.files?.[0]; // Obtener el archivo subido por el usuario
+      const fileInput = form.elements.namedItem('image') as HTMLInputElement; // Obtain the uploaded image file
+      const userFile = fileInput.files?.[0]; // Obtain the file uploaded by the user
       if (userFile) {
-        const userImageUrl = URL.createObjectURL(userFile); // Crear URL de objeto para la imagen del usuario
-        userImage.src = userImageUrl; // Mostrar la imagen del usuario
+        const userImageUrl = URL.createObjectURL(userFile); // Create object URL for user image
+        userImage.src = userImageUrl;  // Show user image
       }
 
       try {
@@ -65,12 +65,12 @@
           throw new Error('Error en la carga de la imagen');
         }
 
-        const blob = await response.blob(); // Obtener la imagen como un Blob
-        const serverImageUrl = URL.createObjectURL(blob); // Crear una URL de objeto para mostrar la imagen devuelta por el servidor
+        const blob = await response.blob(); // Obtain the image returned by the server
+        const serverImageUrl = URL.createObjectURL(blob); // Create object URL for server image
 
-        // Mostrar la imagen procesada en el contenedor
+        // Show the server image
         serverImage.src = serverImageUrl; 
-        imagePreview.classList.remove('hidden'); // Mostrar el contenedor de la imagen
+        imagePreview.classList.remove('hidden'); // Show the image preview container
       } catch (error) {
         console.error('Error:', error);
       }
