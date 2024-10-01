@@ -55,6 +55,7 @@
     <div class="subject flex justify-center">
       <button type="submit" class="btn-orange">Submit</button>
     </div>
+    <div style="height: 20px;"></div>
     
   </form>
 
@@ -359,6 +360,53 @@
     margin: 20px 0; 
   }
 
+  .subject select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: linear-gradient(135deg, #58a6ff, #004080);
+    border: 2px solid #004080;
+    border-radius: 8px;
+    padding: 12px;
+    color: black;
+    font-family: 'Montserrat', Arial, sans-serif;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    outline: none;
+    transition: background 0.3s, border-color 0.3s;
+    width: 100%;
+    text-transform: none;
+    background-image: url('https://cdn4.iconfinder.com/data/icons/ionicons/512/icon-ios7-arrow-down-32.png');
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    border-radius: 15px; 
+  }
+
+  .subject select:hover {
+    background: linear-gradient(135deg, #004080, #58a6ff);
+    border-color: #58a6ff;
+    border-radius: 15px; 
+  }
+
+  .subject option {
+    color: #000000;
+    background-color: bisque;
+    padding: 8px;
+    border-radius: 15px; 
+  }
+
+  select::-ms-expand {
+    display: none;
+    border-radius: 15px; 
+  }
+
+  @media screen and (max-width: 480px) {
+    .subject select {
+      font-size: 14px;
+      padding: 10px;
+    }
+  }
 </style>
 
 <script>

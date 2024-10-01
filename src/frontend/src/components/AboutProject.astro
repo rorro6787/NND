@@ -2,16 +2,24 @@
  const personalImageAlt = "Miguel Ángel"
 ---
 
-<article class="flex flex-col items-center justify-center gap-8 text-gray-700 dark:text-gray-300 md:flex-row">
+<article class="flex flex-col items-center justify-center gap-8 text-gray-700 dark:text-gray-300 ">
   <div
-    class="[&>p]:mb-4 [&>p>strong]:text-yellow-500 dark:[&>p>strong]:text-yellow-100 [&>p>strong]:font-normal [&>p>strong]:font-mono text-pretty order-2 md:order-1"
+    class="[&>p]:mb-4 [&>p>strong]:text-yellow-500 dark:[&>p>strong]:text-yellow-100 [&>p>strong]:font-normal [&>p>strong]:font-mono text-pretty "
   >
-    <p>
-      This is the <strong>MRI Brain Disease Detection</strong> System. The Final Degree Project (TFG) will consist of the design and development of an advanced system for medical image analysis, focused on detecting brain pathologies in patients using magnetic resonance imaging (MRI) scans. The main objective of the system is to provide healthcare professionals with an effective tool to accurately and quickly identify and classify brain lesions.
-    </p>
-  </div>
+  <p>
+    This is the <strong>MRI Brain Disease Detection</strong> System. The <strong>Final Degree Project (TFG)</strong> will consist of the design and development of an advanced system for medical image analysis, focused on detecting brain pathologies in patients using <strong>magnetic resonance imaging (MRI)</strong> scans. The main objective of the system is to provide healthcare professionals with an effective tool to accurately and quickly identify and classify brain lesions.
+  </p>
+  <p>
+    The implementation will involve an algorithm that utilizes the <strong>YOLOv8 model</strong> trained with the dataset defined in this link. Each data point in the dataset will be a <strong>three-dimensional image</strong>, with a <strong>.nii extension</strong>, which are the files used in the sector and require specialized software like <strong>3D Slicer</strong> to manipulate and extract information.
+  </p>
+  <p>
+    Each plane of a set of <strong>magnetic resonance imaging (MRI)</strong> scans will be analyzed. This algorithm will be specifically trained to work with <strong>2D images</strong> that are extracted from <strong>three-dimensional (3D) representations</strong>. Its goal is to automatically detect lesions in these images. Once the lesions are identified, the algorithm will generate <strong>2D bounding boxes</strong> that represent the intersections between the 3D images and the analyzed planes. These boxes will help visualize the exact location of the lesions in the MRI scans.
+  </p>
 
-  <img height="200" src="Sagittal-a-3D-FLAIR-and-the-corresponding-coronal-MPR-b-of-an-FD-patient-with-a.png" alt={personalImageAlt} class="order-1 object-cover w-80 h-full p-1 md:order-2 rotate-3 lg:p-2 lg:w-80 rounded-2xl bg-black/20 dark:bg-yellow-500/5 ring-1 ring-black/70 dark:ring-white/20 " style="object-position: 50% 50%">
+  </div>
+  <div class="flex w-full items-center justify-center">
+    <img height="200" src="Sagittal-a-3D-FLAIR-and-the-corresponding-coronal-MPR-b-of-an-FD-patient-with-a.png" alt={personalImageAlt} class="order-1 object-cover w-81 h-full p-1 md:order-2 rotate-3 lg:p-2 lg:w-81 rounded-2xl bg-black/20 dark:bg-yellow-500/5 ring-1 ring-black/70 dark:ring-white/20 " style="object-position: 50% 50%">
+  <div>
 
 </article>
 
