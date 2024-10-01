@@ -51,8 +51,9 @@
     </div>
     
     <div style="height: 40px;"></div>
-    
+
     <div class="subject flex justify-center">
+      <div id="spinner" class="hidden"></div> <!-- Add this line -->
       <button type="submit" class="btn-orange">Submit</button>
     </div>
     <div style="height: 20px;"></div>
@@ -70,6 +71,34 @@
 
 <style>
   @import url(https://fonts.googleapis.com/css?family=Montserrat:400,700);
+
+.hidden {
+  display: none;
+}
+
+#spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border-left-color: orange;
+  animation: spin 1s linear infinite;
+  margin-right: 10px; /* Adjust margin as needed */
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+form.submitting #spinner {
+  display: inline-block;
+}
+
+form.submitting button {
+  display: none;
+}
 
   html {
     font-family: 'Montserrat', Arial, sans-serif;
@@ -437,6 +466,42 @@
     ['dragleave', 'drop'].forEach(eventName => {
         dropArea.addEventListener(eventName, unhighlight, false);
     });
+
+    form.addEventListener('submit', async (event) => {
+    event.preventDefault(); // Prevent page reload
+    form.classList.add('submitting'); // Add this line to show spinner
+
+    const formData = new FormData(form); // Create FormData object with form data
+
+    const userFile = fileInput.files?.[0]; // Get the uploaded user file
+    if (userFile) {
+        const userImageUrl = URL.createObjectURL(userFile); // Create object URL for user image
+        userImage.src = userImageUrl; // Show user image
+        fileNameDisplay.textContent = userFile.name; // Display file name
+        dropMessage.style.display = 'none'; // Hide the initial message
+    }
+
+    try {
+        // Send the image and selected model to the server for upload
+        const response = await fetch(import.meta.env.PUBLIC_API_URL + '/api/upload', {
+            method: 'POST',
+            body: formData, // FormData already includes the selector value
+        });
+
+        if (!response.ok) {
+            throw new Error('Error uploading image'); // Throw error if upload fails
+        }
+
+        const blob = await response.blob(); // Get the image returned from the server
+        const serverImageUrl = URL.createObjectURL(blob); // Create object URL for server image
+        serverImage.src = serverImageUrl; // Show server image
+        imagePreview.classList.remove('hidden'); // Show image preview container
+    } catch (error) {
+        console.error('Error:', error); // Log any errors
+    } finally {
+        form.classList.remove('submitting'); // Add this line to hide spinner
+    }
+});
 
     // Handle dropped files in the drop area
     dropArea.addEventListener('drop', (e: DragEvent) => {
