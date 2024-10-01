@@ -31,7 +31,10 @@ def upload_image():
     if 'image' not in request.files:
         return jsonify(error="No file part"), 400
     
+    model = request.form.get('subject')
     file = request.files['image']
+    #subject = request.files['subject']
+    #print(subject)
     
     # If the user does not select a file, the browser may submit an empty file
     if file.filename == '':

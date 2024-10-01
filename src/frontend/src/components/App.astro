@@ -372,35 +372,36 @@
     const fileInput = document.getElementById('fileElem') as HTMLInputElement;
     const fileNameDisplay = document.getElementById('file-name') as HTMLSpanElement;
     const dropMessage = document.getElementById('drop-message') as HTMLParagraphElement;
+    const subjectInput = document.getElementById('subject_input') as HTMLSelectElement; // Get the subject selector
 
     // Prevent default drag behaviors for drag events
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-      dropArea.addEventListener(eventName, preventDefaults, false);
-      document.body.addEventListener(eventName, preventDefaults, false);
+        dropArea.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
     });
 
     // Highlight the drop area when an item is dragged over it
     ['dragenter', 'dragover'].forEach(eventName => {
-      dropArea.addEventListener(eventName, highlight, false);
+        dropArea.addEventListener(eventName, highlight, false);
     });
 
     // Remove highlight from drop area when item is no longer hovering over it
     ['dragleave', 'drop'].forEach(eventName => {
-      dropArea.addEventListener(eventName, unhighlight, false);
+        dropArea.addEventListener(eventName, unhighlight, false);
     });
 
     // Handle dropped files in the drop area
     dropArea.addEventListener('drop', (e: DragEvent) => {
-      e.preventDefault(); // Prevent default behavior
-      const dt = e.dataTransfer;
+        e.preventDefault(); // Prevent default behavior
+        const dt = e.dataTransfer;
 
-      // Check if dataTransfer is not null
-      if (dt && dt.files) {
-        const files = dt.files;
-        handleFiles(files); // Handle the dropped files
-      } else {
-        console.error("No files found in the data transfer.");
-      }
+        // Check if dataTransfer is not null
+        if (dt && dt.files) {
+            const files = dt.files;
+            handleFiles(files); // Handle the dropped files
+        } else {
+            console.error("No files found in the data transfer.");
+        }
     });
 
     // Open file dialog when clicking on the drop area
@@ -408,74 +409,84 @@
 
     // Add an event listener for file input change
     fileInput.addEventListener('change', (e: Event) => {
-      const target = e.target as HTMLInputElement; // Ensure it's an HTMLInputElement
-      const files = target.files; // Get selected files
-      if (files && files.length > 0) {
-        handleFiles(files); // Handle the selected files
-      }
+        const target = e.target as HTMLInputElement; // Ensure it's an HTMLInputElement
+        const files = target.files; // Get selected files
+        if (files && files.length > 0) {
+            handleFiles(files); // Handle the selected files
+        }
     });
 
     // Handle form submission
     form.addEventListener('submit', async (event) => {
-      event.preventDefault(); // Prevent page reload
-      const formData = new FormData(form); // Create FormData object with form data
+        event.preventDefault(); // Prevent page reload
+        const formData = new FormData(form); // Create FormData object with form data
 
-      const userFile = fileInput.files?.[0]; // Get the uploaded user file
-      if (userFile) {
-        const userImageUrl = URL.createObjectURL(userFile); // Create object URL for user image
-        userImage.src = userImageUrl; // Show user image
-        fileNameDisplay.textContent = userFile.name; // Display file name
-        dropMessage.style.display = 'none'; // Hide the initial message
-      }
+        /*
+        for (let [key, value] of formData.entries()) {
+          console.log(key, value);
+        }
+        */
 
-      try {
-        // Send the image to the server for upload
-        const response = await fetch(import.meta.env.PUBLIC_API_URL + '/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error('Error uploading image'); // Throw error if upload fails
+        const userFile = fileInput.files?.[0]; // Get the uploaded user file
+        if (userFile) {
+            const userImageUrl = URL.createObjectURL(userFile); // Create object URL for user image
+            userImage.src = userImageUrl; // Show user image
+            fileNameDisplay.textContent = userFile.name; // Display file name
+            dropMessage.style.display = 'none'; // Hide the initial message
         }
 
-        const blob = await response.blob(); // Get the image returned from the server
-        const serverImageUrl = URL.createObjectURL(blob); // Create object URL for server image
-        serverImage.src = serverImageUrl; // Show server image
-        imagePreview.classList.remove('hidden'); // Show image preview container
-      } catch (error) {
-        console.error('Error:', error); // Log any errors
-      }
+        // Get the value from the subject selector
+        // const selectedModel = subjectInput.value; // Get the selected option
+        // console.log("Selected model:", selectedModel); // Log the selected model to the console (for debugging)
+
+        try {
+            // Send the image and selected model to the server for upload
+            const response = await fetch(import.meta.env.PUBLIC_API_URL + '/api/upload', {
+                method: 'POST',
+                body: formData, // FormData already includes the selector value
+            });
+
+            if (!response.ok) {
+                throw new Error('Error uploading image'); // Throw error if upload fails
+            }
+
+            const blob = await response.blob(); // Get the image returned from the server
+            const serverImageUrl = URL.createObjectURL(blob); // Create object URL for server image
+            serverImage.src = serverImageUrl; // Show server image
+            imagePreview.classList.remove('hidden'); // Show image preview container
+        } catch (error) {
+            console.error('Error:', error); // Log any errors
+        }
     });
 
     // Prevent default behavior of events
     function preventDefaults(e: Event) {
-      e.preventDefault();
-      e.stopPropagation();
+        e.preventDefault();
+        e.stopPropagation();
     }
 
     // Highlight the drop area
     function highlight() {
-      dropArea.classList.add('highlight');
+        dropArea.classList.add('highlight');
     }
 
     // Remove highlight from drop area
     function unhighlight() {
-      dropArea.classList.remove('highlight');
+        dropArea.classList.remove('highlight');
     }
 
     // Handle files (check and display)
     function handleFiles(files: FileList) {
-      if (files.length > 0) {
-        const file = files[0]; // Get the first dragged file
-        const dataTransfer = new DataTransfer(); // Create a new DataTransfer object
-        dataTransfer.items.add(file); // Add the file to DataTransfer
-        fileInput.files = dataTransfer.files; // Assign files to input
-        const userImageUrl = URL.createObjectURL(file); // Create object URL for user image
-        userImage.src = userImageUrl; // Show image
-        fileNameDisplay.textContent = file.name; // Display file name
-        dropMessage.style.display = 'none'; // Hide the initial message
-      }
+        if (files.length > 0) {
+            const file = files[0]; // Get the first dragged file
+            const dataTransfer = new DataTransfer(); // Create a new DataTransfer object
+            dataTransfer.items.add(file); // Add the file to DataTransfer
+            fileInput.files = dataTransfer.files; // Assign files to input
+            const userImageUrl = URL.createObjectURL(file); // Create object URL for user image
+            userImage.src = userImageUrl; // Show image
+            fileNameDisplay.textContent = file.name; // Display file name
+            dropMessage.style.display = 'none'; // Hide the initial message
+        }
     }
-  });
+});
 </script>
