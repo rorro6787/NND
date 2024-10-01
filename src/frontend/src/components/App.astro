@@ -1,79 +1,481 @@
 ---
+
 ---
 
-<h1
-  class="text-4xl font-bold tracking-tight text-gray-800 sm:text-5xl dark:text-white text-center"
->
-  MRI Brain Disease Detection System
+<h1 class="text-6xl sm:text-7xl lg:text-8xl font-bold tracking-tight text-gray-800 dark:text-white text-center mb-12">
+  MRI Brain Neuropathologies Detection System
 </h1>
 
-<!-- Form to upload an image -->
-<form class="mt-8 flex flex-col items-center" id="image-upload-form" enctype="multipart/form-data">
-  <label class="mb-2 text-lg font-semibold text-gray-800 dark:text-gray-300">
-    Upload an Image:
-    <input 
-      type="file" 
-      name="image" 
-      accept="image/*" 
-      class="mt-2 p-2 border border-gray-300 rounded-md dark:border-gray-600"
-      required
-    />
-  </label>
-  <button 
-    type="submit" 
-    class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
-  >
-    Submit
-  </button>
-</form>
+<div id="container">
+  <div style="height: 80px;"></div>
+  <h1 id="app-demo-title">APP DEMO (<span class="highlight2">YOLOv11</span>)</h1>
+  <form action="#" method="post" id="image-upload-form" enctype="multipart/form-data">
+    
+    <!-- 
+    <div class="name">
+      <label for="name"></label>
+      <input type="text" placeholder="My name is" name="name" id="name_input">
+    </div>
+    <div class="email">
+      <label for="email"></label>
+      <input type="email" placeholder="My e-mail is" name="email" id="email_input">
+    </div>
+    <div class="telephone">
+      <label for="name"></label>
+      <input type="text" placeholder="My number is" name="telephone" id="telephone_input">
+    </div>
+    -->
 
-<!-- Container to display the image -->
+    <div class="subject">
+      <label for="subject"></label>
+      <select name="subject" id="subject_input" required>
+        <option value="" disabled hidden selected>Select an option</option>
+        <option>yolo11n.pt</option>
+        <option>yolo11s.pt</option>
+        <option>yolo11m.pt</option>
+        <option>yolo11l.pt</option>
+        <option>yolo11x.pt</option>
+      </select>
+    </div>
+
+    <div style="height: 50px;"></div>
+    
+    <div class="subject">
+      <label for="subject">Upload an Image:</label>
+      <div style="height: 10px;"></div>
+      <div id="drop-area" class="mt-2 p-4 border border-gray-300 rounded-md dark:border-gray-600" style="text-align: center; cursor: pointer;">
+        <input type="file" name="image" accept="image/*" id="fileElem" class="hidden" required />
+        <p id="drop-message">Drag and drop your MRI scan file</p>
+        <span id="file-name" class="mt-2 block"></span>
+      </div>
+    </div>
+    
+    <div style="height: 40px;"></div>
+    
+    <div class="subject flex justify-center">
+      <button type="submit" class="btn-orange">Submit</button>
+    </div>
+    
+  </form>
+
+</div>
+
 <div id="image-preview" class="mt-8 hidden">
-  <h2 class="text-2xl font-semibold text-gray-800 dark:text-white">Image Preview:</h2>
-  <div class="flex space-x-4"> <!-- Flexbox to display images side by side -->
-    <img id="user-image" src="" alt="Uploaded Image" class="mt-4 max-w-xs rounded-md shadow-md" />
-    <img id="server-image" src="" alt="Processed Image from Server" class="mt-4 max-w-xs rounded-md shadow-md" /> <!-- Second image -->
+  <div class="flex space-x-4">
+    <img id="user-image" src="" alt="Uploaded Image" class="mt-4 max-w-xs rounded-md shadow-md" style="border: 3px solid #58a6ff; border-radius: 10px;" />
+    <img id="server-image" src="" alt="Processed Image from Server" class="mt-4 max-w-xs rounded-md shadow-md" style="border: 3px solid #58a6ff; border-radius: 10px;" />
   </div>
 </div>
 
+<style>
+  @import url(https://fonts.googleapis.com/css?family=Montserrat:400,700);
+
+  html {
+    font-family: 'Montserrat', Arial, sans-serif;
+    -ms-text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  button {
+    overflow: visible;
+  }
+
+  button, select {
+    text-transform: none;
+  }
+
+  button, input, select, textarea {
+    color: #5A5A5A;
+    font: inherit;
+    margin: 0;
+  }
+
+  input {
+    line-height: normal;
+  }
+
+  #container {
+    background: linear-gradient(to right, #58a6ff, #004080);
+    border: solid 3px blue;
+    margin: 60px auto;
+    position: relative;
+    border-radius: 15px; 
+  }
+
+  form {
+    padding: 37.5px;
+    margin: 50px 0;
+  }
+
+  h1 {
+    color: #474544;
+    font-size: 40px;
+    font-weight: 700;
+    letter-spacing: 7px;
+    text-align: center;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .underline {
+    border-bottom: solid 2px #474544;
+    margin: -0.512em auto;
+    width: 80px;
+  }
+
+  .icon_wrapper {
+    margin: 50px auto 0;
+    width: 100%;
+  }
+
+  .icon {
+    display: block;
+    fill: #474544;
+    height: 50px;
+    margin: 0 auto;
+    width: 50px;
+  }
+
+  .email {
+    float: right;
+    width: 45%;
+  }
+
+  input[type='text'], [type='email'], select, textarea {
+    background: none;
+    border: none;
+    border-bottom: solid 2px #474544;
+    color: #474544;
+    font-size: 1.000em;
+    font-weight: 400;
+    letter-spacing: 1px;
+    margin: 0em 0 1.875em 0;
+    padding: 0 0 0.875em 0;
+    text-transform: uppercase;
+    width: 100%;
+    box-sizing: border-box;
+    transition: all 0.3s;
+  }
+
+  input[type='text']:focus, [type='email']:focus, textarea:focus {
+    outline: none;
+    padding: 0 0 0.875em 0;
+  }
+
+  .message {
+    float: none;
+  }
+
+  .name {
+    float: left;
+    width: 45%;
+  }
+
+  select {
+    background: url('https://cdn4.iconfinder.com/data/icons/ionicons/512/icon-ios7-arrow-down-32.png') no-repeat right;
+    outline: none;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+  }
+
+  select::-ms-expand {
+    display: none;
+  }
+
+  .subject {
+    width: 100%;
+  }
+
+  .telephone {
+    width: 100%;
+  }
+
+  textarea {
+    line-height: 150%;
+    height: 150px;
+    resize: none;
+    width: 100%;
+  }
+
+  ::-webkit-input-placeholder {
+    color: black;
+    font-weight: bold; 
+  }
+
+  :-moz-placeholder {
+    color: black;
+    font-weight: bold; 
+    opacity: 1;
+  }
+
+  ::-moz-placeholder {
+    color: black;
+    font-weight: bold; 
+    opacity: 1;
+  }
+
+  :-ms-input-placeholder {
+    color: black;
+    font-weight: bold; 
+  }
+
+  #form_button {
+    background: none;
+    border: solid 2px white;
+    color: white;
+    cursor: pointer;
+    display: inline-block;
+    font-family: 'Helvetica', Arial, sans-serif;
+    font-size: 0.875em;
+    font-weight: bold;
+    outline: none;
+    padding: 20px 35px;
+    text-transform: uppercase;
+    transition: all 0.3s;
+  }
+
+  #form_button:hover {
+    background: white;
+    color: #F2F3EB;
+  }
+
+  @media screen and (max-width: 768px) {
+    #container {
+      margin: 20px auto;
+      width: 95%;
+    }
+  }
+
+  @media screen and (max-width: 480px) {
+    h1 {
+      font-size: 26px;
+    }
+
+    .underline {
+      width: 68px;
+    }
+
+    #form_button {
+      padding: 15px 25px;
+    }
+  }
+
+  @media screen and (max-width: 420px) {
+    h1 {
+      font-size: 18px;
+    }
+
+    .icon {
+      height: 35px;
+      width: 35px;
+    }
+
+    .underline {
+      width: 53px;
+    }
+
+    input[type='text'], [type='email'], select, textarea {
+      font-size: 0.875em;
+    }
+  }
+
+  .btn-orange {
+    background: linear-gradient(135deg, #ff0000, #000000);
+    border: none;
+    color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    transition: background 0.3s, box-shadow 0.3s, transform 0.3s;
+    padding: 10px 20px;
+    margin-top: 20px;
+    transform: scale(1.25);
+  }
+
+  .btn-orange:hover {
+    background: linear-gradient(135deg, #cc0000, #000000);
+    box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
+    transform: scale(1.2);
+  }
+
+  #drop-area {
+    border: 2px dashed darkorchid;
+    border-radius: 8px;
+    transition: background 0.3s, border-color 0.3s;
+  }
+
+  #drop-area:hover {
+    background: rgba(88, 166, 255, 0.2);
+    border-color: #004080;
+  }
+
+  #drop-area p {
+    color: black;
+  }
+
+  .highlight {
+    background-color: rgba(88, 166, 255, 0.2);
+    border-color: #004080;
+    text-transform: none;
+  }
+
+  .highlight2 {
+    border-color: #004080;
+    text-transform: none;
+  }
+
+  label {
+    color: black;
+    font-family: 'Montserrat', Arial, sans-serif;
+    font-weight: bold;
+  }
+
+  .subject select,
+  .subject p {
+    color: black;
+    font-family: 'Montserrat', Arial, sans-serif;
+    font-weight: bold;
+  }
+
+  .subject select {
+    text-transform: none; 
+    background: url('https://cdn4.iconfinder.com/data/icons/ionicons/512/icon-ios7-arrow-down-32.png') no-repeat right;
+    outline: none;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+  }
+
+  #file-name {
+    color: black; 
+    font-family: 'Montserrat', Arial, sans-serif; 
+    font-weight: bold; 
+  }
+
+  #app-demo-title {
+    color: black; 
+    font-family: 'Montserrat', Arial, sans-serif;
+    font-weight: bold; 
+    text-align: center; 
+    margin: 20px 0; 
+  }
+
+</style>
+
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('image-upload-form') as HTMLFormElement; // Type assertion
-    const imagePreview = document.getElementById('image-preview') as HTMLElement; // Type assertion
-    const userImage = document.getElementById('user-image') as HTMLImageElement; // Type assertion
-    const serverImage = document.getElementById('server-image') as HTMLImageElement; // Type assertion
+    // Get references to DOM elements
+    const form = document.getElementById('image-upload-form') as HTMLFormElement;
+    const imagePreview = document.getElementById('image-preview') as HTMLElement;
+    const userImage = document.getElementById('user-image') as HTMLImageElement;
+    const serverImage = document.getElementById('server-image') as HTMLImageElement;
+    const dropArea = document.getElementById('drop-area') as HTMLElement;
+    const fileInput = document.getElementById('fileElem') as HTMLInputElement;
+    const fileNameDisplay = document.getElementById('file-name') as HTMLSpanElement;
+    const dropMessage = document.getElementById('drop-message') as HTMLParagraphElement;
 
+    // Prevent default drag behaviors for drag events
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropArea.addEventListener(eventName, preventDefaults, false);
+      document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    // Highlight the drop area when an item is dragged over it
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropArea.addEventListener(eventName, highlight, false);
+    });
+
+    // Remove highlight from drop area when item is no longer hovering over it
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    // Handle dropped files in the drop area
+    dropArea.addEventListener('drop', (e: DragEvent) => {
+      e.preventDefault(); // Prevent default behavior
+      const dt = e.dataTransfer;
+
+      // Check if dataTransfer is not null
+      if (dt && dt.files) {
+        const files = dt.files;
+        handleFiles(files); // Handle the dropped files
+      } else {
+        console.error("No files found in the data transfer.");
+      }
+    });
+
+    // Open file dialog when clicking on the drop area
+    dropArea.addEventListener('click', () => fileInput.click(), false);
+
+    // Add an event listener for file input change
+    fileInput.addEventListener('change', (e: Event) => {
+      const target = e.target as HTMLInputElement; // Ensure it's an HTMLInputElement
+      const files = target.files; // Get selected files
+      if (files && files.length > 0) {
+        handleFiles(files); // Handle the selected files
+      }
+    });
+
+    // Handle form submission
     form.addEventListener('submit', async (event) => {
-      event.preventDefault(); // Prevent the page from reloading
-      const formData = new FormData(form); // Create a FormData object with the form data
+      event.preventDefault(); // Prevent page reload
+      const formData = new FormData(form); // Create FormData object with form data
 
-      // Obtener el archivo de imagen subido
-      const fileInput = form.elements.namedItem('image') as HTMLInputElement; // Obtain the uploaded image file
-      const userFile = fileInput.files?.[0]; // Obtain the file uploaded by the user
+      const userFile = fileInput.files?.[0]; // Get the uploaded user file
       if (userFile) {
         const userImageUrl = URL.createObjectURL(userFile); // Create object URL for user image
-        userImage.src = userImageUrl;  // Show user image
+        userImage.src = userImageUrl; // Show user image
+        fileNameDisplay.textContent = userFile.name; // Display file name
+        dropMessage.style.display = 'none'; // Hide the initial message
       }
 
       try {
+        // Send the image to the server for upload
         const response = await fetch(import.meta.env.PUBLIC_API_URL + '/api/upload', {
           method: 'POST',
           body: formData,
         });
 
         if (!response.ok) {
-          throw new Error('Error en la carga de la imagen');
+          throw new Error('Error uploading image'); // Throw error if upload fails
         }
 
-        const blob = await response.blob(); // Obtain the image returned by the server
+        const blob = await response.blob(); // Get the image returned from the server
         const serverImageUrl = URL.createObjectURL(blob); // Create object URL for server image
-
-        // Show the server image
-        serverImage.src = serverImageUrl; 
-        imagePreview.classList.remove('hidden'); // Show the image preview container
+        serverImage.src = serverImageUrl; // Show server image
+        imagePreview.classList.remove('hidden'); // Show image preview container
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error:', error); // Log any errors
       }
     });
+
+    // Prevent default behavior of events
+    function preventDefaults(e: Event) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    // Highlight the drop area
+    function highlight() {
+      dropArea.classList.add('highlight');
+    }
+
+    // Remove highlight from drop area
+    function unhighlight() {
+      dropArea.classList.remove('highlight');
+    }
+
+    // Handle files (check and display)
+    function handleFiles(files: FileList) {
+      if (files.length > 0) {
+        const file = files[0]; // Get the first dragged file
+        const dataTransfer = new DataTransfer(); // Create a new DataTransfer object
+        dataTransfer.items.add(file); // Add the file to DataTransfer
+        fileInput.files = dataTransfer.files; // Assign files to input
+        const userImageUrl = URL.createObjectURL(file); // Create object URL for user image
+        userImage.src = userImageUrl; // Show image
+        fileNameDisplay.textContent = file.name; // Display file name
+        dropMessage.style.display = 'none'; // Hide the initial message
+      }
+    }
   });
 </script>
