@@ -42,9 +42,9 @@ def show_slices():
 
     plt.show()
 
-def try_YOLOv8(image_name: str) -> str:
+def try_YOLOv8(image_name: str, model="yolov8n.pt") -> str:
     # Load the YOLOv5 model
-    model = YOLO(model="yolov8n.pt", task="detect", verbose=False)
+    model = YOLO(model=model, task="detect", verbose=False)
 
     # Load an image
     img = os.path.join(os.getcwd(), '..', 'images', image_name)

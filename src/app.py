@@ -44,7 +44,7 @@ def upload_image():
     filename = secure_filename(file.filename)
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
-    image_res_path = try_YOLOv8(os.path.join(os.getcwd(), file_path))
+    image_res_path = try_YOLOv8(os.path.join(os.getcwd(), file_path), model=model)
     # Return the saved file
     return send_file(os.path.join(image_res_path, filename), mimetype='image/jpeg')
 

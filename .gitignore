@@ -3,11 +3,11 @@ venv/
 images/predict*
 
 src/uploads
-src/yolov8n.pt
+src/yolov8*
 src/path.txt
 src/MSLesSeg-Dataset
 
 src/MRI_system/__pycache__
 src/MRI_system/MSLesSeg-Dataset
 src/MRI_system/path.txt
-src/MRI_system/yolov8n.pt
+src/MRI_system/yolov8*
