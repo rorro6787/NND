@@ -44,9 +44,12 @@ def upload_image():
     filename = secure_filename(file.filename)
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
+    import torch
+    # Lets see if cuda is available
+    print("CUDA is available:" + str(torch.cuda.is_available()))
     image_res_path = try_YOLOv8(os.path.join(os.getcwd(), file_path), model=model)
     # Return the saved file
     return send_file(os.path.join(image_res_path, filename), mimetype='image/jpeg')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=4000, debug=True)

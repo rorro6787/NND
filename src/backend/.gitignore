@@ -1,0 +1,9 @@
+uploads
+yolov8*
+path.txt
+MSLesSeg-Dataset
+
+MRI_system/__pycache__
+MRI_system/MSLesSeg-Dataset
+MRI_system/path.txt
+MRI_system/yolov8*
