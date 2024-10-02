@@ -43,7 +43,7 @@
     <div class="subject">
       <label for="subject">Upload an Image:</label>
       <div style="height: 10px;"></div>
-      <div id="drop-area" class="mt-2 p-4 border border-gray-300 rounded-md dark:border-gray-600" style="text-align: center; cursor: pointer;">
+      <div id="drop-area" class="mt-2 p-4 border border-gray-300 rounded-md dark:border-gray-600 flex flex-col justify-center items-center" style="text-align: center; cursor: pointer;">
         <input type="file" name="image" accept="image/*" id="fileElem" class="hidden" required />
         <p id="drop-message">Drag and drop your MRI scan file</p>
         <span id="file-name" class="mt-2 block"></span>
@@ -332,6 +332,18 @@ form.submitting button {
     border: 2px dashed darkorchid;
     border-radius: 8px;
     transition: background 0.3s, border-color 0.3s;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 200px; 
+    position: relative;
+  }
+
+  #drop-message {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
   }
 
   #drop-area:hover {
@@ -379,6 +391,8 @@ form.submitting button {
     color: black; 
     font-family: 'Montserrat', Arial, sans-serif; 
     font-weight: bold; 
+    position: center;
+    bottom: 10px; 
   }
 
   #app-demo-title {
