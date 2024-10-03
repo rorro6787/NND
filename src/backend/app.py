@@ -77,11 +77,15 @@ def upload_image():
         # Perform inference with YOLO
         YOLO_image_path = try_YOLOv8(filename, model=model)
 
-        # Read the image and encode it in base64
-        with open(os.path.join(YOLO_image_path, filename), "rb") as img_file:
+        # Read the yolo image and encode it in base64
+        with open(os.path.join(os.getcwd(), '..', 'images', filename), "rb") as img_file:
             img_str = base64.b64encode(img_file.read()).decode('utf-8')
 
-        images = [img_str]
+        # Read the image and encode it in base64
+        with open(os.path.join(YOLO_image_path, filename), "rb") as img_file:
+            yolo_img_str = base64.b64encode(img_file.read()).decode('utf-8')
+        
+        images = [img_str, yolo_img_str]
     
     # If the file is not a valid extension we return an error
     else:
