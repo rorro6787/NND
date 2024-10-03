@@ -27,7 +27,7 @@ def show_slices(nii_file: str):
 
     return axial_slice, sagittal_slice, coronal_slice
 
-def try_YOLOv8(image_name: str, model="yolov8n.pt") -> str:
+def try_YOLOv8(image_name: str, model="yolo11n.pt") -> str:
     # Load the YOLOv5 model
     model = YOLO(model=model, task="detect", verbose=False)
 

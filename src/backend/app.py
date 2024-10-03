@@ -16,6 +16,9 @@ CORS(app)
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+# Define valid extensions
+VALID_EXTENSIONS = {'.nii', '.jpg', '.jpeg', '.png'}
+
 # Ensure the upload directory exists
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -27,6 +30,14 @@ def numpy_to_base64(image_array):
     image.save(buffer, format="JPEG")
     img_str = base64.b64encode(buffer.getvalue()).decode('utf-8')
     return img_str
+
+def allowed_file(filename):
+    """Check if the file has a valid extension and return both the boolean and the extension."""
+    if '.' in filename:
+        ext = os.path.splitext(filename)[1].lower()
+        return ext in VALID_EXTENSIONS, ext
+    return False, ''
+
 
 @app.route('/api/hello', methods=['GET'])
 def hello():
@@ -40,10 +51,11 @@ def upload_image():
     
     model = request.form.get('subject')
     file = request.files['image']
-    
-    # Check the file extension
-    if not file.filename.endswith('.nii'):
-        return jsonify(error="Only .nii files are allowed"), 400
+
+    # Check if the file has a valid extension
+    is_valid, ext = allowed_file(file.filename)
+    if not is_valid:
+        return jsonify(error=f"Invalid file type. Only {', '.join(VALID_EXTENSIONS)} files are allowed"), 400
     
     # Save the file securely
     filename = secure_filename(file.filename)
@@ -51,22 +63,32 @@ def upload_image():
     file.save(file_path)
 
     # Check if CUDA is available
-    import torch
-    print("CUDA is available:" + str(torch.cuda.is_available()))
+    # import torch
+    # print("CUDA is available:" + str(torch.cuda.is_available()))
+    
+    # We make sure ext is .nii
+    if ext == '.nii':
+        # Get slices
+        axial_slice, sagittal_slice, coronal_slice = show_slices(file_path)
 
-    # Get slices
-    axial_slice, sagittal_slice, coronal_slice = show_slices(os.path.join(os.getcwd(), file_path))
+        # Convert slices to base64 strings
+        axial_base64 = numpy_to_base64(axial_slice)
+        sagittal_base64 = numpy_to_base64(sagittal_slice)
+        coronal_base64 = numpy_to_base64(coronal_slice)
 
-    # Convert slices to base64 strings
-    axial_base64 = numpy_to_base64(axial_slice)
-    sagittal_base64 = numpy_to_base64(sagittal_slice)
-    coronal_base64 = numpy_to_base64(coronal_slice)
+        images = [axial_base64, sagittal_base64, coronal_base64]
+    
+    else:
+        # Perform inference with YOLO
+        YOLO_image_path = try_YOLOv8(filename, model=model)
 
-    # Return the images as base64 strings in the JSON response
-    return jsonify(
-        uploaded=True,
-        images=[axial_base64, sagittal_base64, coronal_base64, axial_base64]
-    )
+        # Read the image and encode it in base64
+        with open(os.path.join(YOLO_image_path, filename), "rb") as img_file:
+            img_str = base64.b64encode(img_file.read()).decode('utf-8')
+
+        images = [img_str]
+    
+    return jsonify(uploaded=True, images=images)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=4000, debug=True)
