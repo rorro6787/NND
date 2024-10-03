@@ -17,7 +17,7 @@ UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Define valid extensions
-VALID_EXTENSIONS = {'.nii', '.jpg', '.jpeg', '.png'}
+VALID_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png'}
 
 # Ensure the upload directory exists
 if not os.path.exists(UPLOAD_FOLDER):
@@ -31,13 +31,9 @@ def numpy_to_base64(image_array):
     img_str = base64.b64encode(buffer.getvalue()).decode('utf-8')
     return img_str
 
-def allowed_file(filename):
-    """Check if the file has a valid extension and return both the boolean and the extension."""
-    if '.' in filename:
-        ext = os.path.splitext(filename)[1].lower()
-        return ext in VALID_EXTENSIONS, ext
-    return False, ''
-
+def file_extension(filename):
+    """return the extension of the file"""
+    return os.path.splitext(filename)[1].lower()
 
 @app.route('/api/hello', methods=['GET'])
 def hello():
@@ -51,11 +47,6 @@ def upload_image():
     
     model = request.form.get('subject')
     file = request.files['image']
-
-    # Check if the file has a valid extension
-    is_valid, ext = allowed_file(file.filename)
-    if not is_valid:
-        return jsonify(error=f"Invalid file type. Only {', '.join(VALID_EXTENSIONS)} files are allowed"), 400
     
     # Save the file securely
     filename = secure_filename(file.filename)
@@ -65,6 +56,9 @@ def upload_image():
     # Check if CUDA is available
     # import torch
     # print("CUDA is available:" + str(torch.cuda.is_available()))
+
+    # Get the file extension
+    ext = file_extension(file.filename)
     
     # We make sure ext is .nii
     if ext == '.nii':
@@ -78,7 +72,8 @@ def upload_image():
 
         images = [axial_base64, sagittal_base64, coronal_base64]
     
-    else:
+    # Or it can be any of the VALID_IMAGE_EXTENSIONS
+    elif ext in VALID_IMAGE_EXTENSIONS:
         # Perform inference with YOLO
         YOLO_image_path = try_YOLOv8(filename, model=model)
 
@@ -88,6 +83,11 @@ def upload_image():
 
         images = [img_str]
     
+    # If the file is not a valid extension we return an error
+    else:
+        return jsonify(error=f"Invalid file type. Only {', '.join(VALID_IMAGE_EXTENSIONS)} and .nii files are allowed"), 400
+    
+    # Return the base64 string in case of success
     return jsonify(uploaded=True, images=images)
 
 if __name__ == '__main__':
