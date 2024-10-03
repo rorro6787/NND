@@ -8,7 +8,7 @@
 
 <div id="container">
   <div style="height: 80px;"></div>
-  <h1 id="app-demo-title">APP DEMO (<span class="highlight2">YOLOv8</span>)</h1>
+  <h1 id="app-demo-title">APP DEMO (<span class="yolo">YOLOv8</span>)</h1>
   <form action="#" method="post" id="image-upload-form" enctype="multipart/form-data">
     <div class="subject">
       <label for="subject"></label>
@@ -332,19 +332,9 @@
     position: relative;
   }
 
-  #drop-message {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-
   #drop-area:hover {
     background: rgba(88, 166, 255, 0.2);
     border-color: #004080;
-  }
-
-  #drop-area p {
-    color: black;
   }
 
   .highlight {
@@ -353,7 +343,7 @@
     text-transform: none;
   }
 
-  .highlight2 {
+  .yolo {
     border-color: #004080;
     text-transform: none;
   }
@@ -369,14 +359,6 @@
     color: black;
     font-family: 'Montserrat', Arial, sans-serif;
     font-weight: bold;
-  }
-
-  .subject select {
-    text-transform: none;
-    background: url('https://cdn4.iconfinder.com/data/icons/ionicons/512/icon-ios7-arrow-down-32.png') no-repeat right;
-    outline: none;
-    -moz-appearance: none;
-    -webkit-appearance: none;
   }
 
   #file-name {
@@ -441,12 +423,6 @@
       font-size: 14px;
       padding: 10px;
     }
-  }
-
-  .processed-image {
-    max-width: 200px;
-    border: 3px solid #58a6ff;
-    border-radius: 10px;
   }
 </style>
 
@@ -521,21 +497,14 @@
       }
     });
 
-    // Prevent default behavior of events
-    function preventDefaults(e: Event) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-
-    // Highlight the drop area
-    function highlight() {
-      dropArea.classList.add('highlight');
-    }
-
-    // Remove highlight from drop area
-    function unhighlight() {
-      dropArea.classList.remove('highlight');
-    }
+    // Add an event listener for file input change
+    fileInput.addEventListener('change', (e: Event) => {
+      const target = e.target as HTMLInputElement; // Ensure it's an HTMLInputElement
+      const files = target.files; // Get selected files
+      if (files && files.length > 0) {
+        handleFiles(files); // Handle the selected files
+      }
+    });
 
     // Handle dropped files in the drop area
     dropArea.addEventListener('drop', (e: DragEvent) => {
@@ -553,14 +522,21 @@
     // Open file dialog when clicking on the drop area
     dropArea.addEventListener('click', () => fileInput.click(), false);
 
-    // Add an event listener for file input change
-    fileInput.addEventListener('change', (e: Event) => {
-      const target = e.target as HTMLInputElement; // Ensure it's an HTMLInputElement
-      const files = target.files; // Get selected files
-      if (files && files.length > 0) {
-        handleFiles(files); // Handle the selected files
-      }
-    });
+    // Prevent default behavior of events
+    function preventDefaults(e: Event) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    // Highlight the drop area
+    function highlight() {
+      dropArea.classList.add('highlight');
+    }
+
+    // Remove highlight from drop area
+    function unhighlight() {
+      dropArea.classList.remove('highlight');
+    }
 
     // Handle files (check and display)
     function handleFiles(files: FileList) {
