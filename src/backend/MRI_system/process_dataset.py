@@ -16,7 +16,7 @@ class ImageTypes(Enum):
     T1 = "t1"
     T2 = "t2"
 
-def load_nifti_image(file_path: str):
+def load_nifti_image(file_path: str) -> np.ndarray:
     """
     Loads a NIfTI (.nii) file and returns its 3D image data as a NumPy array.
 
@@ -39,8 +39,7 @@ def process_patient_timepoint(folder_path: str, patient_id: str, timepoint_id: s
     Parameters:
     folder_path (str): Path to the folder containing NIfTI files.
 
-    Returns:
-    None
+    Returns: None
     """
 
     # List all files in the folder
@@ -78,8 +77,7 @@ def compare_image_with_mask(image: np.ndarray, mask: np.ndarray, patient_id: str
     timepoint_id (str): Timepoint identifier.
     image_type (ImageTypes): Type of the image (FLAIR, T1, T2).
     
-    Returns:
-    None
+    Returns: None
     """
 
     sagittal_slices = []
@@ -105,54 +103,93 @@ def compare_image_with_mask(image: np.ndarray, mask: np.ndarray, patient_id: str
     save_image_slices(coronal_slices, patient_id, timepoint_id, image_type)
     save_image_slices(axial_slices, patient_id, timepoint_id, image_type)
 
-def save_image_slices(image_slices, patient_id: str, timepoint_id: str, image_type: ImageTypes):
+def save_image_slices(image_slices: list, patient_id: str, timepoint_id: str, image_type: ImageTypes):
     """
-    Saves the image slices and their corresponding masks.
+    Saves the given image slices and their corresponding masks to disk, and processes the masks to extract white pixel coordinates.
 
     Parameters:
-    image_slices (list): List of tuples containing image and mask slices.
-    patient_id (str): Patient identifier.
-    timepoint_id (str): Timepoint identifier.
-    image_type (ImageTypes): Type of the image (FLAIR, T1, T2).
+    - image_slices (list of tuples): Each tuple contains an image slice and its corresponding mask (both as numpy arrays).
+    - patient_id (str): Unique identifier for the patient.
+    - timepoint_id (str): Identifier for the timepoint of image acquisition.
+    - image_type (ImageTypes): Enum value representing the type of the image (e.g., FLAIR, T1, T2).
+
+    Behavior:
+    - Randomly assigns each image slice and mask to either a test or train set with ~20% chance for test.
+    - Saves the image slices in the respective 'images' folder and their masks in the 'labels' folder (under either 'train' or 'test' based on the random assignment).
+    - Extracts the coordinates of white pixels from each mask and saves them to a text file in the same folder as the masks.
+    - Deletes the mask image file after the white pixel coordinates are extracted and saved.
+
+    Output:
+    - Saves images in 'patients_dataset/[train/test]/images' and corresponding masks in 'patients_dataset/[train/test]/labels'.
+    - Extracts white pixel coordinates and saves them as a text file in the same location as the masks.
     
-    Returns:
-    None
+    Returns: None
     """
 
-    output_path = os.path.join(os.getcwd(), 'patients_dataset')
+    output_image_base_path = os.path.join(os.getcwd(), 'patients_dataset')
+    output_label_base_path = os.path.join(os.getcwd(), 'patients_dataset')
 
     for i, (img, mask) in enumerate(image_slices):
-        image_dir = os.path.join(output_path, patient_id, timepoint_id, image_type.value, str(i))
-        if not os.path.exists(image_dir):
-            os.makedirs(image_dir)
-        plt.imsave(os.path.join(image_dir, "image.png"), img, cmap='gray')
-        plt.imsave(os.path.join(image_dir, "mask.png"), mask, cmap='gray')
+        prop_test = np.random.randint(1, 10)
+
+        if prop_test < 3:
+            output_image_path = os.path.join(output_image_base_path, 'test', 'images')
+            output_label_path = os.path.join(output_label_base_path, 'test', 'labels')
+        else:
+            output_image_path = os.path.join(output_image_base_path, 'train', 'images')
+            output_label_path = os.path.join(output_label_base_path, 'train', 'labels')
+
+        image_name = f"{patient_id}_{timepoint_id}_{image_type.value}_{i}"
+        
+        # Save the image and mask
+        plt.imsave(os.path.join(output_image_path, f"{image_name}.png"), img, cmap='gray')
+        mask_file = os.path.join(output_label_path, f"{image_name}_mask.png")
+        plt.imsave(mask_file, mask, cmap='gray')
+        
+        # Extract white pixel coordinates and remove the mask file
+        extract_white_pixel_coordinates(mask_file, os.path.join(output_label_path, f"{image_name}_mask.txt"))
+        os.remove(mask_file)
 
 def process_training_dataset(base_path: str):
     """
-    Processes the training dataset for all patients and timepoints.
+    Processes the training dataset by iterating through all patients and their timepoints. 
+    It organizes and processes the MRI images and labels into respective directories for training and testing.
 
     Parameters:
-    base_path (str): Path to the dataset.
+    base_path (str): The root directory of the dataset, which contains subdirectories for patient data.
 
-    Returns:
-    None
+    Directory structure:
+    - Creates the following directories in the current working directory:
+        - 'patients_dataset/train/images': Stores training images.
+        - 'patients_dataset/train/labels': Stores training labels.
+        - 'patients_dataset/test/images': Stores test images.
+        - 'patients_dataset/test/labels': Stores test labels.
+
+    Returns: None
     """
 
     print("Processing the training dataset...")
 
     train_dataset_path = Path(os.path.join(base_path, 'MSLesSeg-Dataset', 'train'))
+
+    os.makedirs(os.path.join(os.getcwd(), 'patients_dataset', 'train', 'images'))
+    os.makedirs(os.path.join(os.getcwd(), 'patients_dataset', 'train', 'labels'))
+    os.makedirs(os.path.join(os.getcwd(), 'patients_dataset', 'test', 'images'))
+    os.makedirs(os.path.join(os.getcwd(), 'patients_dataset', 'test', 'labels'))
+
     for patient_dir in train_dataset_path.iterdir():
-        if patient_dir.is_dir():
-            patient_id = patient_dir.name
-            for timepoint_dir in patient_dir.iterdir():
-                if timepoint_dir.is_dir():
-                    timepoint_id = timepoint_dir.name
-                    process_patient_timepoint(os.path.join(train_dataset_path, patient_id, timepoint_id), patient_id, timepoint_id)
+        if not patient_dir.is_dir():
+            continue
+        patient_id = patient_dir.name
+        for timepoint_dir in patient_dir.iterdir():
+            if not timepoint_dir.is_dir():
+                continue
+            timepoint_id = timepoint_dir.name
+            process_patient_timepoint(os.path.join(train_dataset_path, patient_id, timepoint_id), patient_id, timepoint_id)
 
     print("Training dataset processing finished.")
 
-def extract_white_pixel_coordinates(image_path, output_path=None):
+def extract_white_pixel_coordinates(image_path: str, output_path: str):
     """
     Extracts the coordinates of white pixels from a black and white image 
     and writes them to a text file in the format:
@@ -162,6 +199,7 @@ def extract_white_pixel_coordinates(image_path, output_path=None):
     - image_path: str, the path to the input black and white image file.
     - output_path: str, the path to the output text file (optional).
     """
+
     # Load the image
     img = Image.open(image_path)
     
@@ -303,30 +341,33 @@ def prepare_dataset(dataset_path: str):
         
     # Step 3: Loop through each patient directory
     for patient_directory in training_directory.iterdir():
-        if patient_directory.is_dir():            
-            # Loop through each timepoint directory
-            for timepoint_directory in patient_directory.iterdir():
-                if timepoint_directory.is_dir():
-                    # List all files within the timepoint directory
-                    files_in_timepoint = os.listdir(timepoint_directory)
-                    
-                    # Loop through each file in the timepoint directory
-                    for file_name in files_in_timepoint:
-                        print(f"\t\tFile: {file_name}")
-                        
-                        # Check if the file has a '.gz' extension
-                        if file_name.endswith('.gz'):
-                            # Define the name of the decompressed file (removing the '.gz' suffix)
-                            decompressed_file_name = file_name[:-3]
-                            decompressed_file_path = timepoint_directory / decompressed_file_name
-                            
-                            # Check if the decompressed file already exists
-                            if decompressed_file_path.is_file():
-                                # If it exists, add the original compressed file to the delete list
-                                files_to_remove.add(timepoint_directory / file_name)
-                            else:
-                                # If not, decompress the '.gz' file using the gunzip command
-                                os.system(f"gunzip {timepoint_directory / file_name}")
+        if not patient_directory.is_dir():   
+            continue         
+        # Loop through each timepoint directory
+        for timepoint_directory in patient_directory.iterdir():
+            if not timepoint_directory.is_dir():
+                continue
+            # List all files within the timepoint directory
+            files_in_timepoint = os.listdir(timepoint_directory)
+            
+            # Loop through each file in the timepoint directory
+            for file_name in files_in_timepoint:
+                print(f"\t\tFile: {file_name}")
+                
+                # Check if the file has a '.gz' extension
+                if not file_name.endswith('.gz'):
+                    continue
+                # Define the name of the decompressed file (removing the '.gz' suffix)
+                decompressed_file_name = file_name[:-3]
+                decompressed_file_path = timepoint_directory / decompressed_file_name
+                
+                # Check if the decompressed file already exists
+                if decompressed_file_path.is_file():
+                    # If it exists, add the original compressed file to the delete list
+                    files_to_remove.add(timepoint_directory / file_name)
+                else:
+                    # If not, decompress the '.gz' file using the gunzip command
+                    os.system(f"gunzip {timepoint_directory / file_name}")
         
     # Step 4: Print out the files that will be deleted
     if files_to_remove:
@@ -340,9 +381,8 @@ def prepare_dataset(dataset_path: str):
     
     print("Dataset processing finished.")
 
-
 if __name__ == "__main__":
     # process_training_dataset(os.path.join(os.getcwd(), 'MSLesSeg-Dataset'))
     # download_mslesseg_dataset()
-    # process_training_dataset(os.getcwd())
-    extract_white_pixel_coordinates(os.path.join(os.getcwd(), 'patients_dataset', 'P1', 'T1', 't1', '108', 'mask.png'), os.path.join(os.getcwd(), 'test.txt'))
+    process_training_dataset(os.getcwd())
+    # extract_white_pixel_coordinates(os.path.join(os.getcwd(), 'patients_dataset', 'P1', 'T1', 't1', '108', 'mask.png'), os.path.join(os.getcwd(), 'test.txt'))
