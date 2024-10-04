@@ -138,6 +138,8 @@ def process_training_dataset(base_path: str):
     None
     """
 
+    print("Processing the training dataset...")
+
     train_dataset_path = Path(os.path.join(base_path, 'MSLesSeg-Dataset', 'train'))
     for patient_dir in train_dataset_path.iterdir():
         if patient_dir.is_dir():
@@ -146,6 +148,8 @@ def process_training_dataset(base_path: str):
                 if timepoint_dir.is_dir():
                     timepoint_id = timepoint_dir.name
                     process_patient_timepoint(os.path.join(train_dataset_path, patient_id, timepoint_id), patient_id, timepoint_id)
+
+    print("Training dataset processing finished.")
 
 def download_mslesseg_dataset() -> str:
     """ 
@@ -249,6 +253,7 @@ def prepare_dataset(dataset_path: str):
         OSError: If there are issues with file or directory access during the execution.
     """
     
+    print("Processing the dataset...")
     # Step 1: Define the path to the training dataset directory
     training_directory = Path(os.path.join(dataset_path, 'train'))
 
@@ -257,14 +262,10 @@ def prepare_dataset(dataset_path: str):
         
     # Step 3: Loop through each patient directory
     for patient_directory in training_directory.iterdir():
-        if patient_directory.is_dir():
-            print(f"Patient Directory: {patient_directory.name}")
-            
+        if patient_directory.is_dir():            
             # Loop through each timepoint directory
             for timepoint_directory in patient_directory.iterdir():
                 if timepoint_directory.is_dir():
-                    print(f"\tTimepoint Directory: {timepoint_directory.name}")
-                    
                     # List all files within the timepoint directory
                     files_in_timepoint = os.listdir(timepoint_directory)
                     
@@ -296,7 +297,6 @@ def prepare_dataset(dataset_path: str):
     else:
         print("No files to delete.")
     
-    # Indicate that the dataset processing is finished
     print("Dataset processing finished.")
 
 
