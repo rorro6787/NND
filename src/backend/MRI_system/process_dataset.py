@@ -160,7 +160,7 @@ def extract_white_pixel_coordinates(image_path, output_path=None):
 
     Parameters:
     - image_path: str, the path to the input black and white image file.
-    - output_path: str, the path to the output text file.
+    - output_path: str, the path to the output text file (optional).
     """
     # Load the image
     img = Image.open(image_path)
@@ -181,18 +181,16 @@ def extract_white_pixel_coordinates(image_path, output_path=None):
             pixel = img.getpixel((x, y))
             # Check if the pixel is white (255 in mode '1')
             if pixel == 255:  
-                coordinates.append((x, y))
+                # Normalize and format with six decimal places
+                coordinates.append(f"{x/width:.6f} {y/height:.6f}")
     
     # Format the output string in the required format
-    result = "0 " + " ".join(f"{x} {y}" for x, y in coordinates)
-    print(result)
-    # Use jupyter notebook to make sure the code works
-    # Write the result to a text file
-    # with open(output_path, 'w') as f:
-    #    f.write(result)
-
-
-
+    result = "0 " + " ".join(coordinates)
+    
+    # Optionally write the result to a text file if an output path is provided
+    if output_path:
+        with open(output_path, 'w') as f:
+            f.write(result)
 
 def download_mslesseg_dataset() -> str:
     """ 
@@ -347,4 +345,4 @@ if __name__ == "__main__":
     # process_training_dataset(os.path.join(os.getcwd(), 'MSLesSeg-Dataset'))
     # download_mslesseg_dataset()
     # process_training_dataset(os.getcwd())
-    extract_white_pixel_coordinates("/home/khaosdev/MRI-Neurodegenerative-Disease-Detection/src/backend/MRI_system/patients_dataset/P1/T1/t1/108/mask.png")
+    extract_white_pixel_coordinates(os.path.join(os.getcwd(), 'patients_dataset', 'P1', 'T1', 't1', '108', 'mask.png'), os.path.join(os.getcwd(), 'test.txt'))
