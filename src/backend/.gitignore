@@ -9,3 +9,4 @@ MRI_system/MSLesSeg-Dataset
 MRI_system/path.txt
 MRI_system/yolov8*
 MRI_system/yolo11*
+MRI_system/patients_dataset/P*

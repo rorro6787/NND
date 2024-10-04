@@ -3,8 +3,8 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import os
 import base64
-from MRI_system.script import try_YOLOv8
-from MRI_system.script import show_slices
+from backend.MRI_system.process_dataset import try_YOLOv8
+from backend.MRI_system.process_dataset import show_slices
 from io import BytesIO
 from PIL import Image
 import numpy as np
