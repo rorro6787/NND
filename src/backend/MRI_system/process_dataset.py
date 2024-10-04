@@ -6,6 +6,7 @@ import numpy as np
 import os
 import gdown
 import zipfile
+from PIL import Image
 
 from enum import Enum
 
@@ -150,6 +151,48 @@ def process_training_dataset(base_path: str):
                     process_patient_timepoint(os.path.join(train_dataset_path, patient_id, timepoint_id), patient_id, timepoint_id)
 
     print("Training dataset processing finished.")
+
+def extract_white_pixel_coordinates(image_path, output_path=None):
+    """
+    Extracts the coordinates of white pixels from a black and white image 
+    and writes them to a text file in the format:
+    0 <x1> <y1> <x2> <y2> ... <xn> <yn>.
+
+    Parameters:
+    - image_path: str, the path to the input black and white image file.
+    - output_path: str, the path to the output text file.
+    """
+    # Load the image
+    img = Image.open(image_path)
+    
+    # Convert the image to black and white (mode '1' for 1-bit pixels)
+    img = img.convert('1')  
+    
+    # Get the dimensions of the image
+    width, height = img.size
+    
+    # List to store the coordinates of white pixels
+    coordinates = []
+    
+    # Iterate over each pixel in the image
+    for y in range(height):
+        for x in range(width):
+            # Get the pixel value
+            pixel = img.getpixel((x, y))
+            # Check if the pixel is white (255 in mode '1')
+            if pixel == 255:  
+                coordinates.append((x, y))
+    
+    # Format the output string in the required format
+    result = "0 " + " ".join(f"{x} {y}" for x, y in coordinates)
+    print(result)
+    # Use jupyter notebook to make sure the code works
+    # Write the result to a text file
+    # with open(output_path, 'w') as f:
+    #    f.write(result)
+
+
+
 
 def download_mslesseg_dataset() -> str:
     """ 
@@ -302,5 +345,6 @@ def prepare_dataset(dataset_path: str):
 
 if __name__ == "__main__":
     # process_training_dataset(os.path.join(os.getcwd(), 'MSLesSeg-Dataset'))
-    download_mslesseg_dataset()
-    process_training_dataset(os.getcwd())
+    # download_mslesseg_dataset()
+    # process_training_dataset(os.getcwd())
+    extract_white_pixel_coordinates("/home/khaosdev/MRI-Neurodegenerative-Disease-Detection/src/backend/MRI_system/patients_dataset/P1/T1/t1/108/mask.png")
