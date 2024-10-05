@@ -6,15 +6,12 @@ import numpy as np
 import os
 import gdown
 import zipfile
-from PIL import Image
-
 from enum import Enum
 
-class ImageTypes(Enum):
-    FLAIR = "flair"
-    MASK = "mask"
-    T1 = "t1"
-    T2 = "t2"
+class SliceTypes(Enum):
+    SAGITTAL = "sagittal"
+    CORONAL = "coronal"
+    AXIAL = "axial"
 
 def load_nifti_image(file_path: str) -> np.ndarray:
     """
@@ -32,131 +29,13 @@ def load_nifti_image(file_path: str) -> np.ndarray:
     # Obtain image data as a 3D numpy array
     return img.get_fdata()
 
-def process_patient_timepoint(folder_path: str, patient_id: str, timepoint_id: str):
-    """
-    Processes all .nii files in the specified folder. Identifies one as a mask file and compares each of the remaining images with the mask.
-
-    Parameters:
-    folder_path (str): Path to the folder containing NIfTI files.
-
-    Returns: None
-    """
-
-    # List all files in the folder
-    files = os.listdir(folder_path)
-    images_3D = []
-    mask_image = None
-    
-    # Loop through each file in the folder
-    for file in files:  
-        # Check if the file is a NIfTI file
-        if file.endswith('.nii'):
-            # Load the 3D image data from the file
-            image_data = load_nifti_image(os.path.join(folder_path, file))
-            
-            # Check if the file is the mask file
-            if file.endswith('MASK.nii'):
-                mask_image = image_data  # Set the mask
-            else:
-                # Append other scans to the list
-                images_3D.append(image_data)
-    
-    # Compare each scan with the mask
-    compare_image_with_mask(images_3D[0], mask_image, patient_id, timepoint_id, ImageTypes.FLAIR)
-    compare_image_with_mask(images_3D[1], mask_image, patient_id, timepoint_id, ImageTypes.T1)
-    compare_image_with_mask(images_3D[2], mask_image, patient_id, timepoint_id, ImageTypes.T2)
-
-def compare_image_with_mask(image: np.ndarray, mask: np.ndarray, patient_id: str, timepoint_id: str, image_type: ImageTypes):
-    """
-    Compares a 3D image with a mask and saves the slices.
-
-    Parameters:
-    image (np.ndarray): The 3D image to compare.
-    mask (np.ndarray): The mask image.
-    patient_id (str): Patient identifier.
-    timepoint_id (str): Timepoint identifier.
-    image_type (ImageTypes): Type of the image (FLAIR, T1, T2).
-    
-    Returns: None
-    """
-
-    sagittal_slices = []
-    for i in range(image.shape[0]):
-        sagittal_slice = image[i, :, :]
-        mask_slice = mask[i, :, :]
-        sagittal_slices.append((sagittal_slice, mask_slice))
-    
-    coronal_slices = []
-    for i in range(image.shape[1]):
-        coronal_slice = image[:, i, :]
-        mask_slice = mask[:, i, :]
-        coronal_slices.append((coronal_slice, mask_slice))
-
-    axial_slices = []
-    for i in range(image.shape[2]):
-        axial_slice = image[:, :, i]
-        mask_slice = mask[:, :, i]
-        axial_slices.append((axial_slice, mask_slice))
-    
-    # Save the image slices
-    save_image_slices(sagittal_slices, patient_id, timepoint_id, image_type)
-    save_image_slices(coronal_slices, patient_id, timepoint_id, image_type)
-    save_image_slices(axial_slices, patient_id, timepoint_id, image_type)
-
-def save_image_slices(image_slices: list, patient_id: str, timepoint_id: str, image_type: ImageTypes):
-    """
-    Saves the given image slices and their corresponding masks to disk, and processes the masks to extract white pixel coordinates.
-
-    Parameters:
-    - image_slices (list of tuples): Each tuple contains an image slice and its corresponding mask (both as numpy arrays).
-    - patient_id (str): Unique identifier for the patient.
-    - timepoint_id (str): Identifier for the timepoint of image acquisition.
-    - image_type (ImageTypes): Enum value representing the type of the image (e.g., FLAIR, T1, T2).
-
-    Behavior:
-    - Randomly assigns each image slice and mask to either a test or train set with ~20% chance for test.
-    - Saves the image slices in the respective 'images' folder and their masks in the 'labels' folder (under either 'train' or 'test' based on the random assignment).
-    - Extracts the coordinates of white pixels from each mask and saves them to a text file in the same folder as the masks.
-    - Deletes the mask image file after the white pixel coordinates are extracted and saved.
-
-    Output:
-    - Saves images in 'patients_dataset/[train/test]/images' and corresponding masks in 'patients_dataset/[train/test]/labels'.
-    - Extracts white pixel coordinates and saves them as a text file in the same location as the masks.
-    
-    Returns: None
-    """
-
-    output_image_base_path = os.path.join(os.getcwd(), 'patients_dataset')
-    output_label_base_path = os.path.join(os.getcwd(), 'patients_dataset')
-
-    for i, (img, mask) in enumerate(image_slices):
-        prop_test = np.random.randint(1, 10)
-
-        if prop_test < 3:
-            output_image_path = os.path.join(output_image_base_path, 'test', 'images')
-            output_label_path = os.path.join(output_label_base_path, 'test', 'labels')
-        else:
-            output_image_path = os.path.join(output_image_base_path, 'train', 'images')
-            output_label_path = os.path.join(output_label_base_path, 'train', 'labels')
-
-        image_name = f"{patient_id}_{timepoint_id}_{image_type.value}_{i}"
-        
-        # Save the image and mask
-        plt.imsave(os.path.join(output_image_path, f"{image_name}.png"), img, cmap='gray')
-        mask_file = os.path.join(output_label_path, f"{image_name}_mask.png")
-        plt.imsave(mask_file, mask, cmap='gray')
-        
-        # Extract white pixel coordinates and remove the mask file
-        extract_white_pixel_coordinates(mask_file, os.path.join(output_label_path, f"{image_name}_mask.txt"))
-        os.remove(mask_file)
-
-def process_training_dataset(base_path: str):
+def process_training_dataset(base_path: str = os.getcwd()):
     """
     Processes the training dataset by iterating through all patients and their timepoints. 
     It organizes and processes the MRI images and labels into respective directories for training and testing.
 
     Parameters:
-    base_path (str): The root directory of the dataset, which contains subdirectories for patient data.
+    - base_path (str): The root directory of the dataset, which contains subdirectories for patient data.
 
     Directory structure:
     - Creates the following directories in the current working directory:
@@ -170,65 +49,254 @@ def process_training_dataset(base_path: str):
 
     print("Processing the training dataset...")
 
+    # Define paths for the original training dataset and the new dataset
     train_dataset_path = Path(os.path.join(base_path, 'MSLesSeg-Dataset', 'train'))
+    new_dataset_path = Path(os.path.join(base_path, 'MSLesSeg-Dataset-a'))
 
-    os.makedirs(os.path.join(os.getcwd(), 'patients_dataset', 'train', 'images'))
-    os.makedirs(os.path.join(os.getcwd(), 'patients_dataset', 'train', 'labels'))
-    os.makedirs(os.path.join(os.getcwd(), 'patients_dataset', 'test', 'images'))
-    os.makedirs(os.path.join(os.getcwd(), 'patients_dataset', 'test', 'labels'))
+    # Create necessary directories for storing training and testing images and labels
+    os.makedirs(os.path.join(os.getcwd(), new_dataset_path, 'train', 'images'), exist_ok=True)
+    os.makedirs(os.path.join(os.getcwd(), new_dataset_path, 'train', 'labels'), exist_ok=True)
+    os.makedirs(os.path.join(os.getcwd(), new_dataset_path, 'test', 'images'), exist_ok=True)
+    os.makedirs(os.path.join(os.getcwd(), new_dataset_path, 'test', 'labels'), exist_ok=True)
 
+    # Iterate through each patient's directory in the training dataset
     for patient_dir in train_dataset_path.iterdir():
         if not patient_dir.is_dir():
-            continue
+            continue  # Skip non-directory entries
         patient_id = patient_dir.name
+        
+        # Iterate through each timepoint directory for the current patient
         for timepoint_dir in patient_dir.iterdir():
             if not timepoint_dir.is_dir():
-                continue
+                continue  # Skip non-directory entries
             timepoint_id = timepoint_dir.name
-            process_patient_timepoint(os.path.join(train_dataset_path, patient_id, timepoint_id), patient_id, timepoint_id)
+            
+            # Process the patient data for the current timepoint
+            process_patient_timepoint(
+                new_dataset_path,
+                os.path.join(train_dataset_path, patient_id, timepoint_id),
+                patient_id,
+                timepoint_id
+            )
 
     print("Training dataset processing finished.")
 
-def extract_white_pixel_coordinates(image_path: str, output_path: str):
+def process_patient_timepoint(new_dataset_path: str, folder_path: str, patient_id: str, timepoint_id: str):
     """
-    Extracts the coordinates of white pixels from a black and white image 
-    and writes them to a text file in the format:
-    0 <x1> <y1> <x2> <y2> ... <xn> <yn>.
+    Processes all NIfTI (.nii) files in the specified folder, identifies the mask file, and compares it with the other images in the folder.
 
     Parameters:
-    - image_path: str, the path to the input black and white image file.
-    - output_path: str, the path to the output text file (optional).
+    - new_dataset_path (str): The path to the new dataset directory where processed images will be saved.
+    - folder_path (str): Path to the folder containing the NIfTI files (.nii).
+    - patient_id (str): Unique identifier for the patient.
+    - timepoint_id (str): Identifier for the timepoint of image acquisition.
+
+    Function behavior:
+    - The function lists all files in the given folder.
+    - It identifies the mask file, which is expected to follow the naming convention '{patient_id}_{timepoint_id}_MASK.nii'.
+    - For each remaining NIfTI file (excluding the mask), the function loads the 3D image data and compares it with the mask by calling `compare_image_with_mask`.
+
+    Output:
+    - Calls `compare_image_with_mask` for each non-mask NIfTI file, processing and saving the image slices and masks.
+
+    Returns: None
     """
 
-    # Load the image
-    img = Image.open(image_path)
+    # List all files in the specified folder
+    files = os.listdir(folder_path)
     
-    # Convert the image to black and white (mode '1' for 1-bit pixels)
-    img = img.convert('1')  
+    # Load the mask file based on the expected naming convention
+    mask_image = load_nifti_image(os.path.join(folder_path, f"{patient_id}_{timepoint_id}_MASK.nii"))
     
+    # Extract slices from the mask image for comparison
+    mask_sagittal, mask_coronal, mask_axial = make_slices(mask_image, mask=True)
+    mask_slices = [mask_sagittal, mask_coronal, mask_axial]
+    
+    # Loop through each file in the folder to process NIfTI images
+    for file in files:  
+        # Skip non-NIfTI files and the mask file itself
+        if not file.endswith('.nii') or file.endswith('_MASK.nii'):
+            continue
+
+        # Load the 3D image data from the current NIfTI file
+        image_data = load_nifti_image(os.path.join(folder_path, file))
+        
+        # Extract the file name without the extension (used to identify the image type)
+        file_name = file.split('.')[0]
+
+        # Compare the loaded image with the mask
+        compare_image_with_mask(new_dataset_path, image_data, mask_slices, patient_id, timepoint_id, file_name)
+
+def make_slices(image: np.ndarray, mask: bool = False):
+    """
+    Extracts slices from a 3D medical image along sagittal, coronal, and axial planes.
+
+    Parameters:
+    - image (np.ndarray): A 3D numpy array representing the medical image.
+    - mask (bool): A flag indicating whether to extract white pixel coordinates from the slices.
+                   If True, the function will process the slices to extract white pixel coordinates.
+
+    Returns:
+    - sagittal_slices (list): A list of sagittal slices extracted from the image.
+    - coronal_slices (list): A list of coronal slices extracted from the image.
+    - axial_slices (list): A list of axial slices extracted from the image.
+
+    Behavior:
+    - The function extracts slices along the three principal planes (sagittal, coronal, axial).
+    - If the `mask` parameter is set to True, it applies the `extract_white_pixel_coordinates_mask` function 
+      to each slice to obtain the white pixel coordinates instead of the raw slice data.
+    """
+
+    # Extract sagittal slices (along the first axis of the image)
+    sagittal_slices = []
+    for i in range(image.shape[0]):            
+        sagittal_slice = image[i, :, :]
+        if mask:
+            # Extract white pixel coordinates from the sagittal slice if mask is True
+            sagittal_slice = extract_white_pixel_coordinates_mask(sagittal_slice)
+        sagittal_slices.append(sagittal_slice)
+    
+    # Extract coronal slices (along the second axis of the image)
+    coronal_slices = []
+    for i in range(image.shape[1]):
+        coronal_slice = image[:, i, :]
+        if mask:
+            # Extract white pixel coordinates from the coronal slice if mask is True
+            coronal_slice = extract_white_pixel_coordinates_mask(coronal_slice)
+        coronal_slices.append(coronal_slice)
+
+    # Extract axial slices (along the third axis of the image)
+    axial_slices = []
+    for i in range(image.shape[2]):
+        axial_slice = image[:, :, i]
+        if mask:
+            # Extract white pixel coordinates from the axial slice if mask is True
+            axial_slice = extract_white_pixel_coordinates_mask(axial_slice)
+        axial_slices.append(axial_slice)
+
+    return sagittal_slices, coronal_slices, axial_slices
+    
+def compare_image_with_mask(new_dataset_path: str, image: np.ndarray, mask_slices: list, patient_id: str, timepoint_id: str, image_type: str):
+    """
+    Compares a 3D medical image with its corresponding mask by slicing the image along different planes
+    (sagittal, coronal, axial) and saves the results.
+
+    Parameters:
+    - new_dataset_path (str): The path to the new dataset directory where slices will be saved.
+    - image (np.ndarray): A 3D numpy array representing the medical image.
+    - mask_slices (list of np.ndarray): A list containing 3D numpy arrays representing the mask images for each plane.
+    - patient_id (str): Unique identifier for the patient.
+    - timepoint_id (str): Identifier for the timepoint of image acquisition.
+    - image_type (ImageTypes): Enum indicating the type of image (e.g., FLAIR, T1, T2).
+
+    Function behavior:
+    - The function slices both the 3D image and its corresponding mask along the sagittal, coronal, and axial planes.
+    - For each plane, the corresponding slices from both the image and mask are paired and collected.
+    - The paired slices are then saved using the `save_image_slices` function for each of the three orientations (sagittal, coronal, and axial).
+
+    Output:
+    - Calls the `save_image_slices` function to save the slices and masks for each plane orientation (sagittal, coronal, axial).
+    
+    Returns: None
+    """
+
+    # Extract slices for each plane (sagittal, coronal, axial) from the 3D image
+    sagittal_slices, coronal_slices, axial_slices = make_slices(image)
+    
+    # Save the slices and corresponding masks for each orientation
+    save_image_slices(new_dataset_path, sagittal_slices, mask_slices[0], patient_id, timepoint_id, image_type, SliceTypes.SAGITTAL)
+    save_image_slices(new_dataset_path, coronal_slices, mask_slices[1], patient_id, timepoint_id, image_type, SliceTypes.CORONAL)
+    save_image_slices(new_dataset_path, axial_slices, mask_slices[2], patient_id, timepoint_id, image_type, SliceTypes.AXIAL)
+
+def save_image_slices(new_dataset_path: str, image_slices: list, mask_slices: list, patient_id: str, timepoint_id: str, image_type: str, slice_type: SliceTypes):
+    """
+    Saves image slices and corresponding masks to disk, and processes the masks to extract white pixel coordinates.
+
+    Parameters:
+    - new_dataset_path (str): The path to the new dataset directory where images and masks will be saved.
+    - image_slices (list of tuples): A list where each tuple contains an image slice (numpy array).
+    - mask_slices (list of tuples): A list where each tuple contains a corresponding mask (numpy array) for each image slice.
+    - patient_id (str): A unique identifier for the patient.
+    - timepoint_id (str): Identifier for the image acquisition timepoint.
+    - image_type (ImageTypes): Enum representing the type of image (e.g., FLAIR, T1, T2).
+    - slice_type (SliceTypes): Enum representing the type of slice (e.g., axial, coronal).
+
+    Function behavior:
+    - Randomly assigns each image slice and mask to either a training or test set, with an approximately 20% chance of being assigned to the test set.
+    - Saves the image slices in the 'images' folder and the corresponding masks in the 'labels' folder within either the 'train' or 'test' directories, depending on the random assignment.
+    - Extracts the coordinates of the white pixels from each mask (where white pixels represent specific features of interest) and saves them as text files in the same directory as the masks.
+    - After extracting white pixel coordinates, the mask image file is removed to conserve storage.
+
+    Output:
+    - Image slices are saved in 'patients_dataset/[train/test]/images' and corresponding masks are saved in 'patients_dataset/[train/test]/labels'.
+    - A text file containing the white pixel coordinates is saved in place of the mask image file.
+
+    Returns: None
+    """
+
+    for i in range(len(image_slices)):
+        img = image_slices[i]
+        mask = mask_slices[i]
+        
+        # Randomly assign to test set with approximately 20% probability
+        prop_test = np.random.randint(1, 10)
+
+        # Determine output paths based on random test/train assignment
+        if prop_test < 3:
+            output_image_path = os.path.join(new_dataset_path, 'test', 'images')
+            output_label_path = os.path.join(new_dataset_path, 'test', 'labels')
+        else:
+            output_image_path = os.path.join(new_dataset_path, 'train', 'images')
+            output_label_path = os.path.join(new_dataset_path, 'train', 'labels')
+
+        # Define a unique name for each image and mask based on patient info, image type, and slice index
+        image_name = f"{patient_id}_{timepoint_id}_{image_type}_{slice_type.value}_{i}"
+        
+        # Save the image slice as a PNG file
+        plt.imsave(os.path.join(output_image_path, f"{image_name}.png"), img, cmap='gray')
+        
+        # Extract white pixel coordinates from the mask and save them as a text file
+        with open(os.path.join(output_label_path, f"{image_name}.txt"), 'w') as f:
+            f.write(mask)  # Save the coordinates to the text file
+
+def extract_white_pixel_coordinates_mask(image_array: np.ndarray) -> str:
+    """
+    Extracts the normalized coordinates of white pixels from a black and white image
+    represented as a NumPy array. The output format is a string starting with '0',
+    followed by normalized coordinates of white pixels (where the pixel value is 255).
+    
+    Each coordinate is normalized by the image dimensions, yielding values between 0 and 1.
+    The coordinates are formatted to six decimal places.
+    
+    Parameters:
+    - image_array: np.ndarray
+        A 2D numpy array representing the black and white image, where white pixels
+        have a value of 1 and black pixels have a value of 0.
+
+    Returns: str
+        A string containing the normalized coordinates of white pixels in the format:
+        "0 <x1> <y1> <x2> <y2> ... <xn> <yn>".
+    """
+
     # Get the dimensions of the image
-    width, height = img.size
+    height, width = image_array.shape
     
-    # List to store the coordinates of white pixels
+    # List to store the normalized coordinates of white pixels
     coordinates = []
     
-    # Iterate over each pixel in the image
+    # Iterate over each pixel in the array
     for y in range(height):
         for x in range(width):
-            # Get the pixel value
-            pixel = img.getpixel((x, y))
-            # Check if the pixel is white (255 in mode '1')
-            if pixel == 255:  
-                # Normalize and format with six decimal places
+            # Check if the pixel is white (1)
+            if image_array[y, x] == 1:  
+                # Normalize the coordinates and format them with six decimal places
                 coordinates.append(f"{x/width:.6f} {y/height:.6f}")
     
     # Format the output string in the required format
     result = "0 " + " ".join(coordinates)
     
-    # Optionally write the result to a text file if an output path is provided
-    if output_path:
-        with open(output_path, 'w') as f:
-            f.write(result)
+    # Return the result string
+    return result
 
 def download_mslesseg_dataset() -> str:
     """ 
@@ -384,5 +452,8 @@ def prepare_dataset(dataset_path: str):
 if __name__ == "__main__":
     # process_training_dataset(os.path.join(os.getcwd(), 'MSLesSeg-Dataset'))
     # download_mslesseg_dataset()
-    process_training_dataset(os.getcwd())
     # extract_white_pixel_coordinates(os.path.join(os.getcwd(), 'patients_dataset', 'P1', 'T1', 't1', '108', 'mask.png'), os.path.join(os.getcwd(), 'test.txt'))
+    # process_training_dataset(os.getcwd())
+    process_training_dataset()            
+
+    

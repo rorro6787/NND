@@ -5,10 +5,11 @@ path.txt
 MSLesSeg-Dataset
 
 MRI_system/__pycache__
-MRI_system/MSLesSeg-Dataset
+MRI_system/MSLesSeg-Dataset*
+MRI_system/nuevo_dataset
 MRI_system/path.txt
 MRI_system/yolov8*
 MRI_system/yolo11*
-MRI_system/patients_dataset
 
 MRI_system/test.txt
+MRI_system/pruebas.ipynb
