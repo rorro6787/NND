@@ -6,6 +6,7 @@ import numpy as np
 import os
 import gdown
 import zipfile
+import shutil
 from enum import Enum
 
 class SliceTypes(Enum):
@@ -147,6 +148,8 @@ def make_slices(image: np.ndarray, mask: bool = False):
       to each slice to obtain the white pixel coordinates instead of the raw slice data.
     """
 
+    # (IT WILL CHANGE!!!!!!)
+
     # Extract sagittal slices (along the first axis of the image)
     sagittal_slices = []
     for i in range(image.shape[0]):            
@@ -203,7 +206,7 @@ def compare_image_with_mask(new_dataset_path: str, image: np.ndarray, mask_slice
     # Extract slices for each plane (sagittal, coronal, axial) from the 3D image
     sagittal_slices, coronal_slices, axial_slices = make_slices(image)
     
-    # Save the slices and corresponding masks for each orientation
+    # Save the slices and corresponding masks for each orientation (IT WILL CHANGE!!!!!!)
     save_image_slices(new_dataset_path, sagittal_slices, mask_slices[0], patient_id, timepoint_id, image_type, SliceTypes.SAGITTAL)
     save_image_slices(new_dataset_path, coronal_slices, mask_slices[1], patient_id, timepoint_id, image_type, SliceTypes.CORONAL)
     save_image_slices(new_dataset_path, axial_slices, mask_slices[2], patient_id, timepoint_id, image_type, SliceTypes.AXIAL)
@@ -410,7 +413,11 @@ def prepare_dataset(dataset_path: str):
     # Step 3: Loop through each patient directory
     for patient_directory in training_directory.iterdir():
         if not patient_directory.is_dir():   
-            continue         
+            continue   
+        if patient_directory.name == 'P30':   
+            # We delete the patient P30 because it has a corrupted structure
+            shutil.rmtree(patient_directory)  
+            continue
         # Loop through each timepoint directory
         for timepoint_directory in patient_directory.iterdir():
             if not timepoint_directory.is_dir():
@@ -419,9 +426,7 @@ def prepare_dataset(dataset_path: str):
             files_in_timepoint = os.listdir(timepoint_directory)
             
             # Loop through each file in the timepoint directory
-            for file_name in files_in_timepoint:
-                print(f"\t\tFile: {file_name}")
-                
+            for file_name in files_in_timepoint:                
                 # Check if the file has a '.gz' extension
                 if not file_name.endswith('.gz'):
                     continue
@@ -438,9 +443,7 @@ def prepare_dataset(dataset_path: str):
                     os.system(f"gunzip {timepoint_directory / file_name}")
         
     # Step 4: Print out the files that will be deleted
-    if files_to_remove:
-        print(f"Files to delete: {files_to_remove}")
-        
+    if files_to_remove:        
         # Remove the files marked for deletion from the filesystem
         for file_path in files_to_remove:
             os.remove(file_path)
@@ -454,6 +457,8 @@ if __name__ == "__main__":
     # download_mslesseg_dataset()
     # extract_white_pixel_coordinates(os.path.join(os.getcwd(), 'patients_dataset', 'P1', 'T1', 't1', '108', 'mask.png'), os.path.join(os.getcwd(), 'test.txt'))
     # process_training_dataset(os.getcwd())
+    
+    # download_mslesseg_dataset()
     process_training_dataset()            
 
     
