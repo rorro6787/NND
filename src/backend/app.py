@@ -3,8 +3,7 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import os
 import base64
-from backend.MRI_system.process_dataset import try_YOLOv8
-from backend.MRI_system.process_dataset import show_slices
+from MRI_system.train_validation import tryYOLO
 from io import BytesIO
 from PIL import Image
 import numpy as np
@@ -52,6 +51,8 @@ def upload_image():
     filename = secure_filename(file.filename)
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
+    print(file_path)
+    print("IONIUHBIUNONI")
 
     # Check if CUDA is available
     # import torch
@@ -62,6 +63,7 @@ def upload_image():
     
     # We make sure ext is .nii
     if ext == '.nii':
+        """
         # Get slices
         axial_slice, sagittal_slice, coronal_slice = show_slices(file_path)
 
@@ -71,14 +73,18 @@ def upload_image():
         coronal_base64 = numpy_to_base64(coronal_slice)
 
         images = [axial_base64, sagittal_base64, coronal_base64]
+        """
     
     # Or it can be any of the VALID_IMAGE_EXTENSIONS
     elif ext in VALID_IMAGE_EXTENSIONS:
         # Perform inference with YOLO
-        YOLO_image_path = try_YOLOv8(filename, model=model)
+        image_path = os.path.join(os.getcwd(), file_path)
+        output_path = os.path.join(os.getcwd(), '..', 'images')
+        
+        YOLO_image_path = tryYOLO(image_path, output_path, model="yolov8n-seg-me.pt")
 
         # Read the yolo image and encode it in base64
-        with open(os.path.join(os.getcwd(), '..', 'images', filename), "rb") as img_file:
+        with open(os.path.join(os.getcwd(), 'uploads', filename), "rb") as img_file:
             img_str = base64.b64encode(img_file.read()).decode('utf-8')
 
         # Read the image and encode it in base64

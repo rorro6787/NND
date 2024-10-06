@@ -7,6 +7,7 @@ import os
 import gdown
 import zipfile
 import shutil
+import cv2
 from enum import Enum
 
 class SliceTypes(Enum):
@@ -33,7 +34,7 @@ def load_nifti_image(file_path: str) -> np.ndarray:
 def process_training_dataset(base_path: str = os.getcwd()):
     """
     Processes the training dataset by iterating through all patients and their timepoints. 
-    It organizes and processes the MRI images and labels into respective directories for training and testing.
+    It organizes and processes the MRI images and labels into respective directories for training, testing and validating.
 
     Parameters:
     - base_path (str): The root directory of the dataset, which contains subdirectories for patient data.
@@ -59,6 +60,8 @@ def process_training_dataset(base_path: str = os.getcwd()):
     os.makedirs(os.path.join(os.getcwd(), new_dataset_path, 'train', 'labels'), exist_ok=True)
     os.makedirs(os.path.join(os.getcwd(), new_dataset_path, 'test', 'images'), exist_ok=True)
     os.makedirs(os.path.join(os.getcwd(), new_dataset_path, 'test', 'labels'), exist_ok=True)
+    os.makedirs(os.path.join(os.getcwd(), new_dataset_path, 'val', 'images'), exist_ok=True)
+    os.makedirs(os.path.join(os.getcwd(), new_dataset_path, 'val', 'labels'), exist_ok=True)
 
     # Iterate through each patient's directory in the training dataset
     for patient_dir in train_dataset_path.iterdir():
@@ -126,7 +129,7 @@ def process_patient_timepoint(new_dataset_path: str, folder_path: str, patient_i
         file_name = file.split('.')[0]
 
         # Compare the loaded image with the mask
-        compare_image_with_mask(new_dataset_path, image_data, mask_slices, patient_id, timepoint_id, file_name)
+        compare_image_with_mask(new_dataset_path, image_data, mask_slices, patient_id, file_name)
 
 def make_slices(image: np.ndarray, mask: bool = False):
     """
@@ -156,7 +159,7 @@ def make_slices(image: np.ndarray, mask: bool = False):
         sagittal_slice = image[i, :, :]
         if mask:
             # Extract white pixel coordinates from the sagittal slice if mask is True
-            sagittal_slice = extract_white_pixel_coordinates_mask(sagittal_slice)
+            sagittal_slice = extract_contours_mask(sagittal_slice)
         sagittal_slices.append(sagittal_slice)
     
     # Extract coronal slices (along the second axis of the image)
@@ -165,7 +168,7 @@ def make_slices(image: np.ndarray, mask: bool = False):
         coronal_slice = image[:, i, :]
         if mask:
             # Extract white pixel coordinates from the coronal slice if mask is True
-            coronal_slice = extract_white_pixel_coordinates_mask(coronal_slice)
+            coronal_slice = extract_contours_mask(coronal_slice)
         coronal_slices.append(coronal_slice)
 
     # Extract axial slices (along the third axis of the image)
@@ -174,12 +177,12 @@ def make_slices(image: np.ndarray, mask: bool = False):
         axial_slice = image[:, :, i]
         if mask:
             # Extract white pixel coordinates from the axial slice if mask is True
-            axial_slice = extract_white_pixel_coordinates_mask(axial_slice)
+            axial_slice = extract_contours_mask(axial_slice)
         axial_slices.append(axial_slice)
 
     return sagittal_slices, coronal_slices, axial_slices
     
-def compare_image_with_mask(new_dataset_path: str, image: np.ndarray, mask_slices: list, patient_id: str, timepoint_id: str, image_type: str):
+def compare_image_with_mask(new_dataset_path: str, image: np.ndarray, mask_slices: list, patient_id: str, image_type: str):
     """
     Compares a 3D medical image with its corresponding mask by slicing the image along different planes
     (sagittal, coronal, axial) and saves the results.
@@ -189,7 +192,6 @@ def compare_image_with_mask(new_dataset_path: str, image: np.ndarray, mask_slice
     - image (np.ndarray): A 3D numpy array representing the medical image.
     - mask_slices (list of np.ndarray): A list containing 3D numpy arrays representing the mask images for each plane.
     - patient_id (str): Unique identifier for the patient.
-    - timepoint_id (str): Identifier for the timepoint of image acquisition.
     - image_type (ImageTypes): Enum indicating the type of image (e.g., FLAIR, T1, T2).
 
     Function behavior:
@@ -207,11 +209,11 @@ def compare_image_with_mask(new_dataset_path: str, image: np.ndarray, mask_slice
     sagittal_slices, coronal_slices, axial_slices = make_slices(image)
     
     # Save the slices and corresponding masks for each orientation (IT WILL CHANGE!!!!!!)
-    save_image_slices(new_dataset_path, sagittal_slices, mask_slices[0], patient_id, timepoint_id, image_type, SliceTypes.SAGITTAL)
-    save_image_slices(new_dataset_path, coronal_slices, mask_slices[1], patient_id, timepoint_id, image_type, SliceTypes.CORONAL)
-    save_image_slices(new_dataset_path, axial_slices, mask_slices[2], patient_id, timepoint_id, image_type, SliceTypes.AXIAL)
+    save_image_slices(new_dataset_path, sagittal_slices, mask_slices[0], patient_id, image_type, SliceTypes.SAGITTAL)
+    save_image_slices(new_dataset_path, coronal_slices, mask_slices[1], patient_id, image_type, SliceTypes.CORONAL)
+    save_image_slices(new_dataset_path, axial_slices, mask_slices[2], patient_id, image_type, SliceTypes.AXIAL)
 
-def save_image_slices(new_dataset_path: str, image_slices: list, mask_slices: list, patient_id: str, timepoint_id: str, image_type: str, slice_type: SliceTypes):
+def save_image_slices(new_dataset_path: str, image_slices: list, mask_slices: list, patient_id: str, image_type: str, slice_type: SliceTypes):
     """
     Saves image slices and corresponding masks to disk, and processes the masks to extract white pixel coordinates.
 
@@ -220,12 +222,11 @@ def save_image_slices(new_dataset_path: str, image_slices: list, mask_slices: li
     - image_slices (list of tuples): A list where each tuple contains an image slice (numpy array).
     - mask_slices (list of tuples): A list where each tuple contains a corresponding mask (numpy array) for each image slice.
     - patient_id (str): A unique identifier for the patient.
-    - timepoint_id (str): Identifier for the image acquisition timepoint.
     - image_type (ImageTypes): Enum representing the type of image (e.g., FLAIR, T1, T2).
     - slice_type (SliceTypes): Enum representing the type of slice (e.g., axial, coronal).
 
     Function behavior:
-    - Randomly assigns each image slice and mask to either a training or test set, with an approximately 20% chance of being assigned to the test set.
+    - Randomly assigns each image slice and mask to either a training, test or validation set, with an approximately 15% chance of being assigned to the test set and another 15% to validation set.
     - Saves the image slices in the 'images' folder and the corresponding masks in the 'labels' folder within either the 'train' or 'test' directories, depending on the random assignment.
     - Extracts the coordinates of the white pixels from each mask (where white pixels represent specific features of interest) and saves them as text files in the same directory as the masks.
     - After extracting white pixel coordinates, the mask image file is removed to conserve storage.
@@ -240,20 +241,24 @@ def save_image_slices(new_dataset_path: str, image_slices: list, mask_slices: li
     for i in range(len(image_slices)):
         img = image_slices[i]
         mask = mask_slices[i]
-        
-        # Randomly assign to test set with approximately 20% probability
-        prop_test = np.random.randint(1, 10)
 
         # Determine output paths based on random test/train assignment
-        if prop_test < 3:
-            output_image_path = os.path.join(new_dataset_path, 'test', 'images')
-            output_label_path = os.path.join(new_dataset_path, 'test', 'labels')
-        else:
+        patient_number = int(patient_id[1:])
+        
+        if patient_number >= 1 and patient_number <= 6:
             output_image_path = os.path.join(new_dataset_path, 'train', 'images')
             output_label_path = os.path.join(new_dataset_path, 'train', 'labels')
+        elif patient_number >= 7 and patient_number <= 8:
+            output_image_path = os.path.join(new_dataset_path, 'test', 'images')
+            output_label_path = os.path.join(new_dataset_path, 'test', 'labels')
+        elif patient_number >= 9 and patient_number <= 10:
+            output_image_path = os.path.join(new_dataset_path, 'val', 'images')
+            output_label_path = os.path.join(new_dataset_path, 'val', 'labels')
+        else:
+            return
 
         # Define a unique name for each image and mask based on patient info, image type, and slice index
-        image_name = f"{patient_id}_{timepoint_id}_{image_type}_{slice_type.value}_{i}"
+        image_name = f"{image_type}_{slice_type.value}_{i}"
         
         # Save the image slice as a PNG file
         plt.imsave(os.path.join(output_image_path, f"{image_name}.png"), img, cmap='gray')
@@ -262,7 +267,7 @@ def save_image_slices(new_dataset_path: str, image_slices: list, mask_slices: li
         with open(os.path.join(output_label_path, f"{image_name}.txt"), 'w') as f:
             f.write(mask)  # Save the coordinates to the text file
 
-def extract_white_pixel_coordinates_mask(image_array: np.ndarray) -> str:
+def extract_contours_mask(mask: np.ndarray) -> str:
     """
     Extracts the normalized coordinates of white pixels from a black and white image
     represented as a NumPy array. The output format is a string starting with '0',
@@ -272,34 +277,47 @@ def extract_white_pixel_coordinates_mask(image_array: np.ndarray) -> str:
     The coordinates are formatted to six decimal places.
     
     Parameters:
-    - image_array: np.ndarray
+    - mask: np.ndarray
         A 2D numpy array representing the black and white image, where white pixels
-        have a value of 1 and black pixels have a value of 0.
+        have a value of 255 and black pixels have a value of 0.
 
     Returns: str
-        A string containing the normalized coordinates of white pixels in the format:
-        "0 <x1> <y1> <x2> <y2> ... <xn> <yn>".
+        A string containing the normalized coordinates of contours found in the image in the format:
+        "0 <x_center> <y_center> <width> <height> <x1> <y1> <x2> <y2> ... <xn> <yn>" 
+        for each contour. Each coordinate is normalized to fall between 0 and 1, 
+        and the values are formatted to six decimal places.
     """
 
     # Get the dimensions of the image
-    height, width = image_array.shape
+    mask = mask.astype(np.uint8)
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    mask_height, mask_width = mask.shape
     
-    # List to store the normalized coordinates of white pixels
-    coordinates = []
+    annotations = ""
+    for contour in contours:
+            # Get the bounding box of each object
+            x, y, w, h = cv2.boundingRect(contour)
+            
+            # Calculate the center of the bounding box
+            x_center = (x + w / 2) / mask_width
+            y_center = (y + h / 2) / mask_height
+            
+            # Normalize the width and height
+            width = w / mask_width
+            height = h / mask_height
+            
+            # Write the class (assuming class 0) and the bounding box
+            annotations += f'0 {x_center} {y_center} {width} {height}'
+
+            # Add the points of the contour (normalized)
+            for point in contour:
+                px, py = point[0]
+                annotations += f' {px/mask_width} {py/mask_height}'
+
+            # Add a new line for each object
+            annotations += '\n'    
     
-    # Iterate over each pixel in the array
-    for y in range(height):
-        for x in range(width):
-            # Check if the pixel is white (1)
-            if image_array[y, x] == 1:  
-                # Normalize the coordinates and format them with six decimal places
-                coordinates.append(f"{x/width:.6f} {y/height:.6f}")
-    
-    # Format the output string in the required format
-    result = "0 " + " ".join(coordinates)
-    
-    # Return the result string
-    return result
+    return annotations
 
 def download_mslesseg_dataset() -> str:
     """ 
