@@ -47,7 +47,7 @@ def train_YOLO(name_model: str, yaml_file_path: str, path = os.getcwd()) -> None
         data=yaml_file_path,       # Specify the path to the YAML file
         epochs=24,                 # Number of epochs, adjust based on your preference
         imgsz=320,                 # Image size
-        batch=16,                  # Batch size, adjust based on your GPU
+        batch=-1,                  # Batch size, adjust based on your GPU
         name=name_model,           # Name of the experiment
         device=0,                  # Training device, 0 for the first GPU
         project=save_directory,    # Specify the project directory
@@ -82,9 +82,10 @@ def train_kfolds_YOLO(path: str = os.getcwd()) -> None:
         to each fold of the dataset.
     """
     
+    # It would be interesting to parallelize this process when using Picasso
     for i in range(5):
-        name_model = f"yolov8n-seg-me-kfold-{i}"
-        yaml_file_path = os.path.join(path, f"MSLesSeg_Dataset-{i}.yaml")
+        name_model = f"yolov8n-seg-me-kfold-{i+1}"
+        yaml_file_path = os.path.join(path, "k_fold_configs", f"MSLesSeg_Dataset-{i+1}.yaml")
         train_YOLO(name_model, yaml_file_path, path=path)
 
 def tryYOLO(image_name: str, output_path: str, model="yolov8n-seg-me.pt") -> str:

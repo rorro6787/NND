@@ -564,6 +564,31 @@ def prepare_dataset(dataset_path: str):
     print("Dataset processing finished.")
 
 def patients_timepoints(dataset_path: str = os.path.join(os.getcwd(), 'MSLesSeg-Dataset')):
+    """
+    Counts the number of timepoints for each patient in the dataset.
+
+    This function traverses through the training directory within the given dataset path
+    and counts how many timepoints (subdirectories) exist for each patient (subdirectory).
+    It skips non-directory files.
+
+    Parameters:
+    -----------
+    dataset_path : str, optional
+        The path to the dataset directory. Defaults to the 'MSLesSeg-Dataset/train' 
+        directory located in the current working directory.
+
+    Returns:
+    --------
+    dict
+        A dictionary where keys are patient IDs (directory names) and values are the 
+        number of timepoints (subdirectories) for each patient.
+
+    Example:
+    --------
+    >>> patients_timepoints('/path/to/dataset')
+    {'patient_01': 3, 'patient_02': 4}
+    """
+    
     training_directory = Path(os.path.join(dataset_path, 'train'))
     patients = {}
     for patient_directory in training_directory.iterdir():
@@ -576,7 +601,6 @@ def patients_timepoints(dataset_path: str = os.path.join(os.getcwd(), 'MSLesSeg-
             patients[patient_directory.name] += 1
     return patients
 
-
 if __name__ == "__main__":
     # process_training_dataset(os.path.join(os.getcwd(), 'MSLesSeg-Dataset'))
     # download_mslesseg_dataset()
@@ -584,13 +608,6 @@ if __name__ == "__main__":
     # process_training_dataset(os.getcwd())
     
     # download_mslesseg_dataset()
-    # process_training_dataset() 
-    patients = patients_timepoints() 
-    diccionario_ordenado = dict(sorted(patients.items(), key=lambda x: int(x[0][1:])))
-    total = 0
-    for key, value in diccionario_ordenado.items():
-        print(key, "==>", value)
-        total += value
-    print(total)
+    process_training_dataset() 
 
     
