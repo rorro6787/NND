@@ -9,6 +9,7 @@ import zipfile
 import shutil
 import cv2
 from enum import Enum
+from typing import Tuple
 
 class SliceTypes(Enum):
     SAGITTAL = "sagittal"
@@ -55,13 +56,7 @@ def process_training_dataset(base_path: str = os.getcwd()):
     train_dataset_path = Path(os.path.join(base_path, 'MSLesSeg-Dataset', 'train'))
     new_dataset_path = Path(os.path.join(base_path, 'MSLesSeg-Dataset-a'))
 
-    # Create necessary directories for storing training and testing images and labels
-    os.makedirs(os.path.join(os.getcwd(), new_dataset_path, 'train', 'images'), exist_ok=True)
-    os.makedirs(os.path.join(os.getcwd(), new_dataset_path, 'train', 'labels'), exist_ok=True)
-    os.makedirs(os.path.join(os.getcwd(), new_dataset_path, 'test', 'images'), exist_ok=True)
-    os.makedirs(os.path.join(os.getcwd(), new_dataset_path, 'test', 'labels'), exist_ok=True)
-    os.makedirs(os.path.join(os.getcwd(), new_dataset_path, 'val', 'images'), exist_ok=True)
-    os.makedirs(os.path.join(os.getcwd(), new_dataset_path, 'val', 'labels'), exist_ok=True)
+    create_fold_structure(new_dataset_path)
 
     # Iterate through each patient's directory in the training dataset
     for patient_dir in train_dataset_path.iterdir():
@@ -84,6 +79,65 @@ def process_training_dataset(base_path: str = os.getcwd()):
             )
 
     print("Training dataset processing finished.")
+
+def create_fold_structure(new_dataset_path: str) -> None:
+    """
+    Creates a directory structure for a dataset with five folds, each containing
+    subdirectories for images and labels.
+
+    Args:
+        new_dataset_path (str): The path to the base directory where the fold 
+        directories will be created.
+
+    The function performs the following actions:
+    - It initializes a list of five fold directories named 'fold1' to 'fold5'
+      within the specified base directory.
+    - For each fold directory, it creates two subdirectories:
+      - 'images': Intended to store image files.
+      - 'labels': Intended to store corresponding label files.
+
+    The `os.makedirs` function is used to create these directories, and the 
+    `exist_ok=True` parameter ensures that no error is raised if the 
+    directories already exist.
+    
+    Example:
+        create_fold_structure('/path/to/dataset')
+
+    This will create the following directory structure:
+        /path/to/dataset/
+            ├── fold1/
+            │   ├── images/
+            │   └── labels/
+            ├── fold2/
+            │   ├── images/
+            │   └── labels/
+            ├── fold3/
+            │   ├── images/
+            │   └── labels/
+            ├── fold4/
+            │   ├── images/
+            │   └── labels/
+            ├── fold5/
+            │   ├── images/
+            │   └── labels/
+            └── test/
+                ├── images/
+                └── labels/
+
+    """
+
+    folds = [
+        Path(os.path.join(new_dataset_path, 'fold1')),
+        Path(os.path.join(new_dataset_path, 'fold2')),
+        Path(os.path.join(new_dataset_path, 'fold3')),
+        Path(os.path.join(new_dataset_path, 'fold4')),
+        Path(os.path.join(new_dataset_path, 'fold5')),
+        Path(os.path.join(new_dataset_path, 'test'))
+    ]
+
+    for fold in folds:
+        os.makedirs(os.path.join(fold, 'images'), exist_ok=True)
+        os.makedirs(os.path.join(fold, 'labels'), exist_ok=True)
 
 def process_patient_timepoint(new_dataset_path: str, folder_path: str, patient_id: str, timepoint_id: str):
     """
@@ -242,20 +296,7 @@ def save_image_slices(new_dataset_path: str, image_slices: list, mask_slices: li
         img = image_slices[i]
         mask = mask_slices[i]
 
-        # Determine output paths based on random test/train assignment
-        patient_number = int(patient_id[1:])
-        
-        if patient_number >= 1 and patient_number <= 6:
-            output_image_path = os.path.join(new_dataset_path, 'train', 'images')
-            output_label_path = os.path.join(new_dataset_path, 'train', 'labels')
-        elif patient_number >= 7 and patient_number <= 8:
-            output_image_path = os.path.join(new_dataset_path, 'test', 'images')
-            output_label_path = os.path.join(new_dataset_path, 'test', 'labels')
-        elif patient_number >= 9 and patient_number <= 10:
-            output_image_path = os.path.join(new_dataset_path, 'val', 'images')
-            output_label_path = os.path.join(new_dataset_path, 'val', 'labels')
-        else:
-            return
+        output_image_path, output_label_path = assign_dataset_split(new_dataset_path, patient_id)
 
         # Define a unique name for each image and mask based on patient info, image type, and slice index
         image_name = f"{image_type}_{slice_type.value}_{i}"
@@ -266,6 +307,58 @@ def save_image_slices(new_dataset_path: str, image_slices: list, mask_slices: li
         # Extract white pixel coordinates from the mask and save them as a text file
         with open(os.path.join(output_label_path, f"{image_name}.txt"), 'w') as f:
             f.write(mask)  # Save the coordinates to the text file
+
+def assign_dataset_split(new_dataset_path: str, patient_id: str) -> Tuple[str, str]:
+    """
+    Assigns a patient to a specific dataset split (training, testing, or validation) 
+    based on the patient's unique identifier.
+
+    Parameters:
+    - new_dataset_path (str): The base path to the dataset directory.
+    - patient_id (str): A unique identifier for the patient, formatted with a prefix 
+      followed by a numeric patient number (e.g., 'P01').
+
+    Returns:
+    - Tuple[str, str]: A tuple containing:
+        - str: The path to the directory for the output images for the assigned fold.
+        - str: The path to the directory for the output labels for the assigned fold.
+
+    The function determines the appropriate fold based on the numeric portion of the 
+    patient ID. Each fold corresponds to a specific range of patient numbers:
+        - 'fold1' for patients 1-6
+        - 'fold2' for patients 7-13
+        - 'fold3' for patients 14-23
+        - 'fold4' for patients 24-39
+        - 'fold5' for patients 40-53
+
+    Example:
+        output_images, output_labels = assign_dataset_split('/path/to/dataset', 'P10')
+        
+    This will return the paths for the images and labels corresponding to 'fold1':
+        ('/path/to/dataset/fold1/images', '/path/to/dataset/fold1/labels')
+    """
+
+    patient_number = int(patient_id[1:])
+    
+    fold = ''
+
+    if patient_number in range(1, 6):
+        fold = 'fold1'
+    elif patient_number in range(6, 12):
+        fold = 'fold2'
+    elif patient_number in range(12, 19):
+        fold = 'fold3'
+    elif patient_number in range(19, 28):
+        fold = 'fold4'
+    elif patient_number in range(28, 41):
+        fold = 'fold5'
+    else:
+        fold = 'test'
+
+    output_image_path = os.path.join(new_dataset_path,  fold, 'images')
+    output_label_path = os.path.join(new_dataset_path,  fold, 'labels')
+    
+    return output_image_path, output_label_path
 
 def extract_contours_mask(mask: np.ndarray) -> str:
     """
@@ -470,6 +563,20 @@ def prepare_dataset(dataset_path: str):
     
     print("Dataset processing finished.")
 
+def patients_timepoints(dataset_path: str = os.path.join(os.getcwd(), 'MSLesSeg-Dataset')):
+    training_directory = Path(os.path.join(dataset_path, 'train'))
+    patients = {}
+    for patient_directory in training_directory.iterdir():
+        if not patient_directory.is_dir():
+            continue
+        patients[patient_directory.name] = 0
+        for timepoint_directory in patient_directory.iterdir():
+            if not timepoint_directory.is_dir():
+                continue
+            patients[patient_directory.name] += 1
+    return patients
+
+
 if __name__ == "__main__":
     # process_training_dataset(os.path.join(os.getcwd(), 'MSLesSeg-Dataset'))
     # download_mslesseg_dataset()
@@ -477,6 +584,13 @@ if __name__ == "__main__":
     # process_training_dataset(os.getcwd())
     
     # download_mslesseg_dataset()
-    process_training_dataset()            
+    # process_training_dataset() 
+    patients = patients_timepoints() 
+    diccionario_ordenado = dict(sorted(patients.items(), key=lambda x: int(x[0][1:])))
+    total = 0
+    for key, value in diccionario_ordenado.items():
+        print(key, "==>", value)
+        total += value
+    print(total)
 
     

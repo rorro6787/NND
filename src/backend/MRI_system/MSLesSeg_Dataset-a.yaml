@@ -1,7 +1,0 @@
-train: ./MSLesSeg-Dataset-a/train/images/   # Path to training images
-test: ./MSLesSeg-Dataset-a/test/images/     # Path to test images
-val: ./MSLesSeg-Dataset-a/val/images/       # Path to validation images
-
-nc: 1  # Number of classes (only one: multiple sclerosis)
-names: ['multiple_esclerosis']  # Name of the class
-

@@ -3,7 +3,7 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import os
 import base64
-from MRI_system.train_validation import tryYOLO
+from MRI_system.train_validation import try_YOLO
 from io import BytesIO
 from PIL import Image
 import numpy as np
@@ -81,7 +81,7 @@ def upload_image():
         image_path = os.path.join(os.getcwd(), file_path)
         output_path = os.path.join(os.getcwd(), '..', 'images')
         
-        YOLO_image_path = tryYOLO(image_path, output_path, model="yolov8n-seg-me.pt")
+        YOLO_image_path = try_YOLO(image_path, output_path, model="yolov8n-seg-me.pt")
 
         # Read the yolo image and encode it in base64
         with open(os.path.join(os.getcwd(), 'uploads', filename), "rb") as img_file:
