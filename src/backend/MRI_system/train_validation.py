@@ -44,18 +44,38 @@ def train_YOLO(name_model: str, yaml_file_path: str, path = os.getcwd()) -> None
 
     # Train the model with your dataset
     model.train(
-        data=yaml_file_path,       # Specify the path to the YAML file
-        epochs=32,                  # Number of epochs, adjust based on your preference
-        imgsz=320,                 # Image size
+        data=yaml_file_path,       # Path to the YAML file with data configuration
+        epochs=32,                 # Number of training epochs
+        imgsz=320,                 # Image size (width and height)
         # lr0=0.01,                # Initial learning rate
         # lrf=0.001,               # Final learning rate
-        # weight_decay=0.0005,     # Weight decay
-        batch=-1,                  # Batch size, adjust based on your GPU
-        name=name_model,           # Name of the experiment
-        device=0,                  # Training device, 0 for the first GPU
-        project=save_directory,    # Specify the project directory
-        save_dir=save_directory,   # Specify the save directory for the trained model    
-        augment=True               # Use data augmentation     
+        # weight_decay=0.0005,     # Weight decay for regularization
+        # momentum=0.937,          # Momentum for SGD optimizer
+        # dampening=0.5,           # Momentum damping
+        # nesterov=True,           # Use Nesterov momentum
+        # accumulative=2,          # Gradient accumulation steps
+        batch=-1,                  # Batch size, -1 for default
+        name=name_model,           # Experiment/model name
+        device=0,                  # Device ID for training (0 for first GPU)
+        project=save_directory,    # Project directory for results
+        save_dir=save_directory,   # Directory to save the trained model
+        fraction=0.25,             # Fraction of dataset for training
+        # hyp=None,                # Hyperparameter file path or None for defaults
+        # local_rank=-1,           # Local GPU rank for distributed training
+        # sync_bn=False,           # Use synchronized batch norm
+        # workers=8,               # Number of data loading workers
+        plots=True,                # Generate training plots
+        # freeze=[0],              # Freeze specific layers (list of layer indices)
+        # save_period=1,           # Save model every 'n' epochs
+        # resume=False,            # Resume training from a saved model
+        # val=True,                # Validate model after each epoch
+        # image_weights=False,     # Weight images in loss
+        # hyp_path=None,           # Path to hyperparameter file
+        # save_json=False,         # Save results as JSON
+        # lr_schedule=True,        # Use learning rate scheduling
+        # rect=False,              # Use rectangular image resizing
+        # single_cls=False,        # Train on single class only
+        # compute_map=False,       # Calculate mAP during validation
     )
 
 def train_kfolds_YOLO(path: str = os.getcwd()) -> None:
