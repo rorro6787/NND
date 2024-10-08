@@ -35,7 +35,7 @@ def train_YOLO(name_model: str, yaml_file_path: str, path = os.getcwd()) -> None
     """
 
     # Load the pre-trained YOLOv8n model for segmentation
-    model = YOLO('yolov8n-seg.pt')  
+    model = YOLO('yolov8n-seg.pt', task='segmentation')  
 
     save_directory = os.path.join(path, 'runs')
 
@@ -45,15 +45,18 @@ def train_YOLO(name_model: str, yaml_file_path: str, path = os.getcwd()) -> None
     # Train the model with your dataset
     model.train(
         data=yaml_file_path,       # Specify the path to the YAML file
-        epochs=24,                 # Number of epochs, adjust based on your preference
+        epochs=32,                  # Number of epochs, adjust based on your preference
         imgsz=320,                 # Image size
+        # lr0=0.01,                # Initial learning rate
+        # lrf=0.001,               # Final learning rate
+        # weight_decay=0.0005,     # Weight decay
         batch=-1,                  # Batch size, adjust based on your GPU
         name=name_model,           # Name of the experiment
         device=0,                  # Training device, 0 for the first GPU
         project=save_directory,    # Specify the project directory
-        save_dir=save_directory    # Specify the save directory for the trained model          
+        save_dir=save_directory,   # Specify the save directory for the trained model    
+        augment=True               # Use data augmentation     
     )
-
 
 def train_kfolds_YOLO(path: str = os.getcwd()) -> None:
     """
