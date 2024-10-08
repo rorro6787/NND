@@ -1,5 +1,6 @@
 from ultralytics import YOLO
 import os
+import ultralytics
 
 def train_YOLO(name_model: str, yaml_file_path: str, path = os.getcwd()) -> None:
     """
@@ -71,7 +72,7 @@ def train_YOLO(name_model: str, yaml_file_path: str, path = os.getcwd()) -> None
         # val=True,                # Validate model after each epoch
         # image_weights=False,     # Weight images in loss
         # hyp_path=None,           # Path to hyperparameter file
-        # save_json=False,         # Save results as JSON
+        # save_json=True,          # Save results as JSON
         # lr_schedule=True,        # Use learning rate scheduling
         # rect=False,              # Use rectangular image resizing
         # single_cls=False,        # Train on single class only
@@ -119,4 +120,5 @@ def tryYOLO(image_name: str, output_path: str, model="yolov8n-seg-me.pt") -> str
     return results[0].save_dir
 
 if __name__ == '__main__':
+    # print(ultralytics.checks())
     train_kfolds_YOLO()
