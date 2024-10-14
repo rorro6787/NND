@@ -37,9 +37,7 @@ Each plane of a set of MRI images will be analyzed. This algorithm will be speci
 ## Requirements
 
 - Python 3.X.X
-- PyTorch
-- Ultralytics YOLOv8
-- Other dependencies listed in `requirements.txt`
+- npm 9.X.X
 
 ## Installation
 

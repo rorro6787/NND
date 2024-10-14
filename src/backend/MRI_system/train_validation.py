@@ -46,7 +46,7 @@ def train_YOLO(name_model: str, yaml_file_path: str, path = os.getcwd()) -> None
     # Train the model with your dataset
     model.train(
         data=yaml_file_path,       # Path to the YAML file with data configuration
-        epochs=32,                 # Number of training epochs
+        epochs=64,                 # Number of training epochs
         imgsz=320,                 # Image size (width and height)
         # lr0=0.01,                # Initial learning rate
         # lrf=0.001,               # Final learning rate
@@ -112,7 +112,7 @@ def train_kfolds_YOLO(path: str = os.getcwd()) -> None:
         yaml_file_path = os.path.join(path, "k_fold_configs", f"MSLesSeg_Dataset-{i+1}.yaml")
         train_YOLO(name_model, yaml_file_path, path=path)
 
-def tryYOLO(image_name: str, output_path: str, model="yolov8n-seg-me.pt") -> str:
+def try_YOLO(image_name: str, output_path: str, model="yolov8n-seg-me.pt") -> str:
     model_path = os.path.join(os.getcwd(), model)
     model = YOLO(model=model_path, task="segment", verbose=False)
     img = os.path.join(image_name, image_name)
@@ -121,4 +121,8 @@ def tryYOLO(image_name: str, output_path: str, model="yolov8n-seg-me.pt") -> str
 
 if __name__ == '__main__':
     # print(ultralytics.checks())
-    train_kfolds_YOLO()
+    # train_kfolds_YOLO()
+    i = 1
+    name_model = f"yolov8n-seg-me-kfold-{i}"
+    yaml_file_path = os.path.join(os.getcwd(), "k_fold_configs", f"MSLesSeg_Dataset-{i}.yaml")
+    train_YOLO(name_model, yaml_file_path, path=os.getcwd())

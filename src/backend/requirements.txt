@@ -17,3 +17,4 @@ scikit-image==0.24.0
 ipympl==0.9.4
 flask==3.0.3
 flask_cors==5.0.0
+ruff==0.6.9
