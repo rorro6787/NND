@@ -10,6 +10,7 @@ MRI_system/nuevo_dataset
 MRI_system/path.txt
 MRI_system/yolov8*
 MRI_system/yolo11*
+MRI_system/pruebas_yolo
 
 MRI_system/test.txt
 MRI_system/pruebas.ipynb
