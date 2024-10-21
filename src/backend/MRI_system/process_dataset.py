@@ -36,8 +36,7 @@ def load_nifti_image(file_path: str) -> np.ndarray:
     # Obtain image data as a 3D numpy array
     return img.get_fdata()
 
-
-def process_training_dataset(base_path: str = os.getcwd()):
+def process_training_dataset(base_path: str = os.getcwd()) -> None:
     """
     Processes the training dataset by iterating through all patients and their timepoints.
     It organizes and processes the MRI images and labels into respective directories for training, testing and validating.
@@ -83,7 +82,6 @@ def process_training_dataset(base_path: str = os.getcwd()):
             )
 
     print("Training dataset processing finished.")
-
 
 def create_fold_structure(new_dataset_path: str) -> None:
     """
@@ -144,10 +142,9 @@ def create_fold_structure(new_dataset_path: str) -> None:
         os.makedirs(os.path.join(fold, "images"), exist_ok=True)
         os.makedirs(os.path.join(fold, "labels"), exist_ok=True)
 
+    os.makedirs(os.path.join(new_dataset_path, "masks"), exist_ok=True)
 
-def process_patient_timepoint(
-    new_dataset_path: str, folder_path: str, scan: Scan
-):
+def process_patient_timepoint(new_dataset_path: str, folder_path: str, scan: Scan) -> None:
     """
     Processes all NIfTI (.nii) files in the specified folder, identifies the mask file, and compares it with the other images in the folder.
 
@@ -175,9 +172,12 @@ def process_patient_timepoint(
         os.path.join(folder_path, f"{scan.patient}_{scan.timespan}_MASK.nii")
     )
 
+    scan.set_modality(f"{scan.patient}_{scan.timespan}")
     # Extract slices from the mask image for comparison
-    mask_sagittal, mask_coronal, mask_axial = make_slices(mask_image, mask=True)
+    mask_sagittal, mask_coronal, mask_axial = make_slices(mask_image, scan, mask=True)
     mask_slices = [mask_sagittal, mask_coronal, mask_axial]
+
+
 
     # Loop through each file in the folder to process NIfTI images
     for file in files:
@@ -198,8 +198,7 @@ def process_patient_timepoint(
             new_dataset_path, image_data, mask_slices, scan
         )
 
-
-def make_slices(image: np.ndarray, mask: bool = False):
+def make_slices(image: np.ndarray, scan: Scan, mask: bool = False) -> Tuple[list, list, list]:
     """
     Extracts slices from a 3D medical image along sagittal, coronal, and axial planes.
 
@@ -220,14 +219,13 @@ def make_slices(image: np.ndarray, mask: bool = False):
     """
 
     # (IT WILL CHANGE!!!!!!)
-
     # Extract sagittal slices (along the first axis of the image)
     sagittal_slices = []
     for i in range(image.shape[0]):
         sagittal_slice = image[i, :, :]
         if mask:
             # Extract white pixel coordinates from the sagittal slice if mask is True
-            sagittal_slice = extract_contours_mask(sagittal_slice)
+            sagittal_slice = extract_contours_mask(sagittal_slice, scan, SliceTypes.SAGITTAL, i)
         sagittal_slices.append(sagittal_slice)
 
     # Extract coronal slices (along the second axis of the image)
@@ -236,7 +234,7 @@ def make_slices(image: np.ndarray, mask: bool = False):
         coronal_slice = image[:, i, :]
         if mask:
             # Extract white pixel coordinates from the coronal slice if mask is True
-            coronal_slice = extract_contours_mask(coronal_slice)
+            coronal_slice = extract_contours_mask(coronal_slice, scan, SliceTypes.CORONAL, i)
         coronal_slices.append(coronal_slice)
 
     # Extract axial slices (along the third axis of the image)
@@ -245,18 +243,12 @@ def make_slices(image: np.ndarray, mask: bool = False):
         axial_slice = image[:, :, i]
         if mask:
             # Extract white pixel coordinates from the axial slice if mask is True
-            axial_slice = extract_contours_mask(axial_slice)
+            axial_slice = extract_contours_mask(axial_slice, scan, SliceTypes.AXIAL, i)
         axial_slices.append(axial_slice)
 
     return sagittal_slices, coronal_slices, axial_slices
 
-
-def compare_image_with_mask(
-    new_dataset_path: str,
-    image: np.ndarray,
-    mask_slices: list,
-    scan: Scan
-):
+def compare_image_with_mask(new_dataset_path: str, image: np.ndarray, mask_slices: list, scan: Scan) -> None:
     """
     Compares a 3D medical image with its corresponding mask by slicing the image along different planes
     (sagittal, coronal, axial) and saves the results.
@@ -279,7 +271,7 @@ def compare_image_with_mask(
     """
 
     # Extract slices for each plane (sagittal, coronal, axial) from the 3D image
-    sagittal_slices, coronal_slices, axial_slices = make_slices(image)
+    sagittal_slices, coronal_slices, axial_slices = make_slices(image, scan)
 
     # Save the slices and corresponding masks for each orientation (IT WILL CHANGE!!!!!!)
     save_image_slices(
@@ -304,14 +296,7 @@ def compare_image_with_mask(
         SliceTypes.AXIAL,
     )
 
-
-def save_image_slices(
-    new_dataset_path: str,
-    image_slices: list,
-    mask_slices: list,
-    scan: Scan,
-    slice_type: SliceTypes,
-):
+def save_image_slices(new_dataset_path: str, image_slices: list, mask_slices: list, scan: Scan, slice_type: SliceTypes) -> None:
     """
     Saves image slices and corresponding masks to disk, and processes the masks to extract white pixel coordinates.
 
@@ -354,7 +339,6 @@ def save_image_slices(
         # Extract white pixel coordinates from the mask and save them as a text file
         with open(os.path.join(output_label_path, f"{image_name}.txt"), "w") as f:
             f.write(mask)  # Save the coordinates to the text file
-
 
 def assign_dataset_split(new_dataset_path: str, scan: Scan) -> Tuple[str, str]:
     """
@@ -407,8 +391,7 @@ def assign_dataset_split(new_dataset_path: str, scan: Scan) -> Tuple[str, str]:
 
     return output_image_path, output_label_path
 
-
-def extract_contours_mask(mask: np.ndarray) -> str:
+def extract_contours_mask(mask: np.ndarray, scan: Scan, slice_type: SliceTypes, i: int) -> str:
     """
     Extracts the normalized coordinates of white pixels from a black and white image
     represented as a NumPy array. The output format is a string starting with '0',
@@ -431,6 +414,11 @@ def extract_contours_mask(mask: np.ndarray) -> str:
 
     # Get the dimensions of the image
     mask = mask.astype(np.uint8)
+    image_name = f"{scan.modality}_{slice_type.value}_{i}"
+    plt.imsave(
+            os.path.join(os.getcwd(), "MSLesSeg-Dataset-a", "masks", f"{image_name}.png"), mask, cmap="gray"
+    )
+    # cv2.imwrite(os.path.join(os.getcwd(), "MSLesSeg-Dataset-a", "masks", scan.), mask)
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     mask_height, mask_width = mask.shape
 
@@ -460,70 +448,7 @@ def extract_contours_mask(mask: np.ndarray) -> str:
 
     return annotations
 
-
-def download_mslesseg_dataset() -> str:
-    """
-    Downloads and extracts the MSLesSeg Dataset from Google Drive if it is not already present
-    in the current working directory.
-
-    The function checks if the dataset folder already exists. If it does not, it downloads a
-    ZIP file containing the dataset from a specified Google Drive URL, extracts the contents,
-    and then deletes the ZIP file to save space. If the dataset is already downloaded,
-    it simply informs the user.
-
-    Steps:
-    1. Get the current working directory.
-    2. Check if the dataset directory exists.
-    3. If the directory does not exist:
-        a. Specify the Google Drive URL to download the dataset.
-        b. Set the name for the ZIP file to be saved locally.
-        c. Download the ZIP file from the URL using `gdown`.
-        d. Extract the contents of the ZIP file into the current directory.
-        e. Remove the ZIP file after extraction to clean up.
-    4. If the directory exists, inform the user that the dataset is already downloaded.
-
-    Returns:
-        str: The path to the dataset directory.
-    """
-
-    current_directory = os.getcwd()  # Get the current working directory
-
-    # Name of the ZIP file to save locally
-    zip_file_name = "MSLesSeg-Dataset.zip"
-    dataset_folder_name = "MSLesSeg-Dataset"
-
-    # Check if dataset directory exists
-    dataset_directory_path = os.path.join(current_directory, dataset_folder_name)
-    if not os.path.exists(dataset_directory_path):
-        # URL to download the zip file from Google Drive
-        google_drive_url = "https://drive.google.com/uc?export=download&id=1y55uyeo79M4Cw6eg_G9-06qU6jhJphsM"
-
-        # Download the zip file from the URL
-        print("Downloading dataset...")
-        gdown.download(
-            google_drive_url, zip_file_name, quiet=False
-        )  # Download using gdown
-        print(f"File downloaded as {zip_file_name}")
-
-        # Extract the contents of the ZIP file
-        with zipfile.ZipFile(zip_file_name, "r") as zip_ref:
-            zip_ref.extractall(current_directory)  # Extract to current directory
-
-        print("Dataset downloaded and extracted.")
-        # Delete the ZIP file after extraction
-        os.remove(zip_file_name)
-        print("Dataset downloading process finished.")
-
-    else:
-        print(
-            "Dataset already downloaded in the system..."
-        )  # Inform user if dataset exists
-
-    # Prepare the dataset with the function defined below
-    prepare_dataset(dataset_directory_path)
-
-
-def prepare_dataset(dataset_path: str):
+def prepare_dataset(dataset_path: str) -> None:
     """
     Processes a dataset of medical images stored in a hierarchical directory structure.
 
@@ -617,10 +542,7 @@ def prepare_dataset(dataset_path: str):
 
     print("Dataset processing finished.")
 
-
-def patients_timepoints(
-    dataset_path: str = os.path.join(os.getcwd(), "MSLesSeg-Dataset"),
-):
+def patients_timepoints(dataset_path: str = os.path.join(os.getcwd(), "MSLesSeg-Dataset")) -> dict:
     """
     Counts the number of timepoints for each patient in the dataset.
 
@@ -658,12 +580,69 @@ def patients_timepoints(
             patients[patient_directory.name] += 1
     return patients
 
+def download_from_cloud(url: str, folder_name: str) -> None:
+    """
+    Downloads a file from a cloud storage service using its URL.
+
+    Parameters:
+    - url (str): The URL of the file to download.
+    - output_path (str): The path where the downloaded file will be saved.
+
+    Returns: None
+    """
+
+    current_directory = os.getcwd()  
+
+    # Name of the ZIP file to save locally
+    zip_file_name = "f{folder_name}.zip"
+
+    # Check if dataset directory exists
+    directory_path = os.path.join(current_directory, folder_name)
+    if not os.path.exists(directory_path):
+
+        # Download the zip file from the URL
+        print("Downloading dataset...")
+        gdown.download(url, zip_file_name, quiet=False) 
+        print(f"File downloaded as {zip_file_name}")
+
+        # Extract the contents of the ZIP file
+        with zipfile.ZipFile(zip_file_name, "r") as zip_ref:
+            zip_ref.extractall(current_directory)  
+
+        print("Dataset downloaded and extracted.")
+
+        # Delete the ZIP file after extraction
+        os.remove(zip_file_name)
+        print("Dataset downloading process finished.")
+
+    else:
+        print("Dataset already downloaded in the system...")
+
+    return directory_path
+
+def download_process_dataset() -> None:
+    """
+    Downloads the MS Lesion Segmentation dataset from Google Drive and processes it.
+
+    The function downloads the dataset from Google Drive, extracts the contents,
+    and processes the training dataset by organizing and preparing the MRI images
+    and labels into respective directories for training, testing, and validating.
+
+    Parameters: None
+
+    Returns: None
+
+    Example:
+    >>> download_process_dataset()
+    """
+
+    url_dataset = "https://drive.google.com/uc?id=1i3JgXqRF43WNLlScDOPaolDPJpxNMYxc"
+    dataset_directory_path = download_from_cloud(url_dataset, "MSLesSeg-Dataset")
+    # prepare_dataset(dataset_directory_path)
+
+    # process_training_dataset()
+    url_dataset_a = "https://drive.google.com/uc?export=download&id=12FH4NnGM5vj0avFboMBNR0ao1jjZ3AG7"
+    download_from_cloud(url_dataset_a, "MSLesSeg-Dataset-a")
 
 if __name__ == "__main__":
-    # process_training_dataset(os.path.join(os.getcwd(), 'MSLesSeg-Dataset'))
-    # download_mslesseg_dataset()
-    # extract_white_pixel_coordinates(os.path.join(os.getcwd(), 'patients_dataset', 'P1', 'T1', 't1', '108', 'mask.png'), os.path.join(os.getcwd(), 'test.txt'))
-    # process_training_dataset(os.getcwd())
-
-    download_mslesseg_dataset()
-    process_training_dataset()
+    download_process_dataset()
