@@ -50,7 +50,7 @@ def train_YOLO(name_model: str, yaml_file_path: str, path=os.getcwd()) -> None:
     # Train the model with your dataset
     model.train(
         data=yaml_file_path,       # Path to the YAML file with data configuration
-        epochs=16,                 # Number of training epochs
+        epochs=128,                # Number of training epochs
         imgsz=320,                 # Image size (width and height)
         # lr0=0.01,                # Initial learning rate
         # lrf=0.001,               # Final learning rate
@@ -64,14 +64,14 @@ def train_YOLO(name_model: str, yaml_file_path: str, path=os.getcwd()) -> None:
         device=0,                  # Device ID for training (0 for first GPU)
         project=save_directory,    # Project directory for results
         save_dir=save_directory,   # Directory to save the trained model
-        fraction=0.1,              # Fraction of dataset for training
+        fraction=0.5,              # Fraction of dataset for training
         # hyp=None,                # Hyperparameter file path or None for defaults
         # local_rank=-1,           # Local GPU rank for distributed training
         # sync_bn=False,           # Use synchronized batch norm
         # workers=8,               # Number of data loading workers
         plots=True,                # Generate training plots
         # freeze=[0],              # Freeze specific layers (list of layer indices)
-        # save_period=1,           # Save model every 'n' epochs
+        save_period=1,             # Save model every 'n' epochs
         # resume=False,            # Resume training from a saved model
         # val=True,                # Validate model after each epoch
         # image_weights=False,     # Weight images in loss
@@ -81,8 +81,8 @@ def train_YOLO(name_model: str, yaml_file_path: str, path=os.getcwd()) -> None:
         # rect=False,              # Use rectangular image resizing
         # single_cls=False,        # Train on single class only
         # compute_map=False,       # Calculate mAP during validation
-        iou = 0.9,                 # IoU threshold for mAP calculation
-        conf = 0.2,                # Confidence threshold for mAP calculation
+        # iou = 0.9,               # IoU threshold for mAP calculation
+        # conf = 0.2,              # Confidence threshold for mAP calculation
     )
 
 def train_kfolds_YOLO(path: str = os.getcwd()) -> None:

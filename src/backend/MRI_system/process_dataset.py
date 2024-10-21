@@ -135,7 +135,7 @@ def create_fold_structure(new_dataset_path: str) -> None:
         Path(os.path.join(new_dataset_path, "fold3")),
         Path(os.path.join(new_dataset_path, "fold4")),
         Path(os.path.join(new_dataset_path, "fold5")),
-        Path(os.path.join(new_dataset_path, "test")),
+        # Path(os.path.join(new_dataset_path, "test")),
     ]
 
     for fold in folds:
@@ -373,18 +373,16 @@ def assign_dataset_split(new_dataset_path: str, scan: Scan) -> Tuple[str, str]:
 
     fold = ""
 
-    if patient_number in range(1, 6):
+    if patient_number in range(1, 7):
         fold = "fold1"
-    elif patient_number in range(6, 12):
+    elif patient_number in range(7, 14):
         fold = "fold2"
-    elif patient_number in range(12, 19):
+    elif patient_number in range(14, 24):
         fold = "fold3"
-    elif patient_number in range(19, 28):
+    elif patient_number in range(24, 41):
         fold = "fold4"
-    elif patient_number in range(28, 41):
+    elif patient_number in range(41, 54):
         fold = "fold5"
-    else:
-        fold = "test"
 
     output_image_path = os.path.join(new_dataset_path, fold, "images")
     output_label_path = os.path.join(new_dataset_path, fold, "labels")
@@ -638,10 +636,10 @@ def download_process_dataset() -> None:
 
     url_dataset = "https://drive.google.com/uc?id=1i3JgXqRF43WNLlScDOPaolDPJpxNMYxc"
     dataset_directory_path = download_from_cloud(url_dataset, "MSLesSeg-Dataset")
-    # prepare_dataset(dataset_directory_path)
+    prepare_dataset(dataset_directory_path)
 
     # process_training_dataset()
-    url_dataset_a = "https://drive.google.com/uc?export=download&id=12FH4NnGM5vj0avFboMBNR0ao1jjZ3AG7"
+    url_dataset_a = "https://drive.google.com/uc?export=download&id=1JD3Hb4U93EiRDVC4SNg4IVGqFJSfehPB"
     download_from_cloud(url_dataset_a, "MSLesSeg-Dataset-a")
 
 if __name__ == "__main__":
