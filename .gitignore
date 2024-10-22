@@ -2,3 +2,4 @@ venv/
 src/images/predict*
 src/backend/images
 .ruff_cache
+passwords.txt
