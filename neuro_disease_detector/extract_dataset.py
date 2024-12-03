@@ -167,7 +167,7 @@ def patients_timepoints() -> dict:
             patients[patient_directory.name] += 1
 
     # Log the result showing the number of timepoints per patient
-    logging.info(f"Timepoints per patient: {patients}")
+    logging.info(f"Timepoints per patient: {patients}\n")
     return patients
 
 def extract_dataset() -> bool:

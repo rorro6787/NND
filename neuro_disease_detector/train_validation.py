@@ -9,7 +9,6 @@ import csv
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 
-
 def train_YOLO(name_model: str, yaml_file_path: str, path=os.getcwd()) -> None:
     """
     Trains a YOLOv8 segmentation model using a specified dataset.
