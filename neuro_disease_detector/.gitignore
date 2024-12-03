@@ -1,0 +1,13 @@
+uploads
+
+__pycache__
+MSLesSeg-Dataset*
+nuevo_dataset
+path.txt
+yolov8*
+yolo11*
+pruebas_yolo
+
+test.txt
+pruebas.ipynb
+runs
