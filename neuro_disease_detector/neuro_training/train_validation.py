@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import cv2
 import numpy as np
-from scan import ImageScan
+from neuro_disease_detector.neuro_training.scan import ImageScan
 import torch
 import csv
 import matplotlib.pyplot as plt

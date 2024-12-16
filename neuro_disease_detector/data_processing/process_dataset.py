@@ -4,8 +4,8 @@ from typing import Tuple
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utils import extract_contours_mask, load_nifti_image
-from extract_dataset import extract_dataset, download_dataset_from_cloud
+from neuro_disease_detector.utils.utils_dataset import extract_contours_mask, load_nifti_image
+from neuro_disease_detector.data_processing.extract_dataset import extract_dataset, download_dataset_from_cloud
 
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -83,7 +83,6 @@ def process_training_dataset() -> None:
 
     # Define paths for the source training dataset and the destination dataset
     train0_path = Path(dataset0) / "train"
-    dataset1_path = Path(dataset1)
 
     # Create necessary folder structure for images and labels
     create_dataset_structure()
@@ -133,7 +132,7 @@ def process_patient_timepoint(patient_id: str, timepoint_id: str) -> None:
 
         file_name = file.split(".")[0]
 
-        image_slices = make_image_slices(image, mask_slices, patient_id, timepoint_id, file_name)
+        make_image_slices(image, mask_slices, patient_id, timepoint_id, file_name)
 
 def make_mask_slices(mask: np.ndarray, patient_id: str, timepoint_id: str) -> list:
     """
@@ -313,7 +312,6 @@ def save_image_slice(image_slice: np.ndarray, mask_slice: np.ndarray, patient_id
     image_name = f"{file_name}_{slice_type}_{index}"
 
     # Save the image slice as a PNG file in the corresponding directory (train/test/validation/images)
-    a = Path(image_path) / f"{image_name}.png"
     plt.imsave(Path(image_path) / f"{image_name}.png", image_slice, cmap="gray")
 
     # Save the coordinates to the text file
