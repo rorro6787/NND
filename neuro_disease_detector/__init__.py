@@ -1,0 +1,3 @@
+from neuro_disease_detector.logger import configure_logging
+
+configure_logging()

@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 from neuro_disease_detector.utils.utils_dataset import extract_contours_mask, load_nifti_image
 from neuro_disease_detector.data_processing.extract_dataset import extract_dataset, download_dataset_from_cloud
 
-import logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+from neuro_disease_detector.logger import get_logger
+logger = get_logger(__name__)
 
 dataset0 = "MSLesSeg-Dataset"
 dataset1 = "MSLesSeg-Dataset-a"
@@ -63,7 +63,7 @@ def create_dataset_structure() -> None:
     
     # Create a 'masks' directory at the base level
     (dataset1_path / "masks").mkdir(parents=True, exist_ok=True)
-    logging.info(f"Base directory created: {dataset1_path}")
+    logger.info(f"Base directory created: {dataset1_path}")
 
 def process_training_dataset() -> None:
     """
@@ -94,7 +94,7 @@ def process_training_dataset() -> None:
             continue 
         # Get patient identifier
         patient_id = patient_dir.name
-        logging.info(f"Patient {patient_id} being processed")
+        logger.info(f"Patient {patient_id} being processed")
 
         # Iterate through each timepoint directory for the current patient
         for timepoint_dir in patient_dir.iterdir():
@@ -388,29 +388,31 @@ def process_dataset() -> bool:
     Returns:
         bool: True if the dataset was successfully processed and is ready, False if an error occurred.
     """
-
+    
     url = "https://drive.google.com/uc?export=download&id=1JD3Hb4U93EiRDVC4SNg4IVGqFJSfehPB"
     folder_name = "MSLesSeg-Dataset-a"
 
     # Check if the folder already exists
     if os.path.exists(folder_name):
-        logging.info(f"The training dataset folder '{folder_name}' already exists.")
-        return True
+        logger.info(f"The training dataset folder '{folder_name}' already exists.")
+        return Path(folder_name).resolve()
 
     # Check if dataset extraction is successful
+    """
     if not extract_dataset():
         return False
+    """
     
     try:
         # Extract the dataset (again, assuming this is required by the process)
-        logging.info("Processing the training dataset...")
+        logger.info("Processing the training dataset...")
         download_dataset_from_cloud(url, folder_name)
         # process_training_dataset()
-        logging.info("Training dataset processing finished.")
-        return True
+        logger.info("Training dataset processing finished.")
+        return Path(folder_name).resolve()
     except Exception as e:
         # Log any unexpected errors
-        logging.error(f"An unexpected error occurred: {e}")
+        logger.error(f"An unexpected error occurred: {e}")
         return False
 
 if __name__ == "__main__":

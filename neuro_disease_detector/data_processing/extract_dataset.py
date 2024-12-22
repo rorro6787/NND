@@ -4,8 +4,8 @@ import shutil
 import gdown
 import zipfile
 
-import logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+from neuro_disease_detector.logger import get_logger
+logger = get_logger(__name__)
 
 def prepare_dataset(dataset_path: str) -> None:
     """
@@ -36,7 +36,7 @@ def prepare_dataset(dataset_path: str) -> None:
         OSError: If there are issues with file or directory access during the execution.
     """
     
-    logging.info("Processing the dataset...")
+    logger.info("Processing the dataset...")
 
     # Define the dataset path with the 'train' subdirectory
     dataset_path = Path(dataset_path) / "train"
@@ -49,7 +49,7 @@ def prepare_dataset(dataset_path: str) -> None:
         
         # Remove corrupted patient directory if found
         if patient_directory.name == "P30":
-            logging.warning(f"Removing corrupted patient directory: {patient_directory}")
+            logger.warning(f"Removing corrupted patient directory: {patient_directory}")
             shutil.rmtree(patient_directory)
             continue
         
@@ -80,14 +80,14 @@ def prepare_dataset(dataset_path: str) -> None:
 
     # Remove redundant .gz files if any were found
     if files_to_remove:
-        logging.info("Removing redundant .gz files:")
+        logger.info("Removing redundant .gz files:")
         for file_path in files_to_remove:
-            logging.info(f"Deleting {file_path}")
+            logger.info(f"Deleting {file_path}")
             os.remove(file_path)
     else:
-        logging.info("No redundant .gz files found to delete.")
+        logger.info("No redundant .gz files found to delete.")
 
-    logging.info("Dataset processing finished.")
+    logger.info("Dataset processing finished.")
 
 def download_dataset_from_cloud(url: str, folder_name: str) -> None:
     """
@@ -106,19 +106,19 @@ def download_dataset_from_cloud(url: str, folder_name: str) -> None:
     dataset_zip = f"{folder_name}.zip"
 
     # Download the ZIP file
-    logging.info("Starting dataset download...")
+    logger.info("Starting dataset download...")
     gdown.download(url, dataset_zip, quiet=False)
-    logging.info(f"File downloaded as {dataset_zip}")
+    logger.info(f"File downloaded as {dataset_zip}")
     
     # Extract the contents
-    logging.info("Extracting dataset...")
+    logger.info("Extracting dataset...")
     with zipfile.ZipFile(dataset_zip, "r") as zip_ref:
         zip_ref.extractall()
-    logging.info("Dataset extracted successfully.")
+    logger.info("Dataset extracted successfully.")
 
     # Delete the ZIP file
     os.remove(dataset_zip)
-    logging.info("Temporary ZIP file removed.")
+    logger.info("Temporary ZIP file removed.")
 
 def patients_timepoints() -> dict:
     """
@@ -167,7 +167,7 @@ def patients_timepoints() -> dict:
             patients[patient_directory.name] += 1
 
     # Log the result showing the number of timepoints per patient
-    logging.info(f"Timepoints per patient: {patients}\n")
+    logger.info(f"Timepoints per patient: {patients}\n")
     return patients
 
 def extract_dataset() -> bool:
@@ -183,23 +183,23 @@ def extract_dataset() -> bool:
 
     # Check if the folder already exists
     if os.path.exists(folder_name):
-        logging.info(f"The dataset folder '{folder_name}' already exists.")
+        logger.info(f"The dataset folder '{folder_name}' already exists.")
         patients_timepoints()
         return True
     
     try:
         # Download and prepare the dataset
-        logging.info("Downloading dataset...")
+        logger.info("Downloading dataset...")
         download_dataset_from_cloud(url, folder_name)
-        logging.info("Preparing dataset...")
+        logger.info("Preparing dataset...")
         prepare_dataset(folder_name)
-        logging.info("Dataset downloaded and prepared successfully.")
+        logger.info("Dataset downloaded and prepared successfully.")
         patients_timepoints()
         return True
     except FileNotFoundError as fnf_error:
-        logging.error(f"File not found error: {fnf_error}")
+        logger.error(f"File not found error: {fnf_error}")
     except Exception as e:
-        logging.error(f"An unexpected error occurred: {e}")
+        logger.error(f"An unexpected error occurred: {e}")
 
     return False
 
