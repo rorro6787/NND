@@ -108,6 +108,37 @@ def process_training_dataset() -> None:
             process_patient_timepoint(patient_id, timepoint_id)
 
 def process_patient_timepoint(patient_id: str, timepoint_id: str) -> None:
+    """
+    Processes NIfTI images and their corresponding mask for a specific patient and timepoint.
+
+    Args:
+        patient_id (str): The unique identifier of the patient.
+        timepoint_id (str): The specific timepoint associated with the patient's imaging data.
+
+    Description:
+        This function performs the following steps:
+        1. Constructs the folder path containing the NIfTI files for the given patient and timepoint.
+        2. Lists all files in the specified folder.
+        3. Loads the mask file (expected to follow the naming convention "{patient_id}_{timepoint_id}_MASK.nii").
+        4. Extracts slices from the mask image for further processing.
+        5. Iterates through each file in the folder:
+            - Skips non-NIfTI files and the mask file itself.
+            - Loads the 3D image data from the NIfTI file.
+            - Extracts slices from the image and processes them alongside the mask slices.
+
+    Notes:
+        - The `load_nifti_image` function is assumed to load NIfTI files and return their 3D data.
+        - The `make_mask_slices` function is expected to extract and process mask slices.
+        - The `make_image_slices` function is used to process image slices with the corresponding mask slices.
+
+    Dependencies:
+        - Requires the `os` and `pathlib` libraries for file and path handling.
+        - Assumes the presence of utility functions such as `load_nifti_image`, `make_mask_slices`, and `make_image_slices`.
+
+    Example Usage:
+        process_patient_timepoint("patient123", "timepointA")
+    """
+    
     folder_path = Path(dataset0) / "train" / patient_id / timepoint_id
 
     # List all files in the specified folder

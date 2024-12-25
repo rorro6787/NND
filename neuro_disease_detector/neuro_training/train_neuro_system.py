@@ -72,7 +72,7 @@ def train_neuro_system(yolo_model: str, model_name: str, yaml_file_path: str) ->
         # conf = 0.2,              # Confidence threshold for mAP calculation
     )
 
-def train_neuro_system_k_folds(dataset_path: str) -> None:
+def train_neuro_system_k_folds(dataset_path: str, yolo_model: str) -> None:
     """
     Trains the YOLO segmentation model using 5-fold cross-validation.
 
@@ -85,9 +85,6 @@ def train_neuro_system_k_folds(dataset_path: str) -> None:
     Returns:
         None
     """
-
-    # Select the disere YOLO model for K-fold training process
-    yolo_model = "yolo11n-seg.pt"
 
     yaml_files = generate_yaml_files(dataset_path)
     os.makedirs(Path("k_fold_configs"), exist_ok=True)
@@ -105,5 +102,6 @@ def train_neuro_system_k_folds(dataset_path: str) -> None:
 
 if __name__ == "__main__":
     # dataset_path = process_dataset()
+    yolo_model = "yolo11n-seg.pt"
     dataset_path = "/home/rodrigocarreira/MRI-Neurodegenerative-Disease-Detection/neuro_disease_detector/data_processing"
-    train_neuro_system_k_folds(dataset_path)
+    train_neuro_system_k_folds(dataset_path, yolo_model)
