@@ -1,13 +1,15 @@
 from ultralytics import YOLO
 from pathlib import Path
 from neuro_disease_detector.utils.utils_training import generate_yaml_files
+from neuro_disease_detector.data_processing.process_dataset import process_dataset
 import yaml
 import os
+from neuro_disease_detector.neuro_training.__init__  import yolo_model, yolo_model_suffix
 
 from neuro_disease_detector.logger import get_logger
 logger = get_logger(__name__)
 
-def train_neuro_system(yolo_model: str, model_name: str, yaml_file_path: str) -> None:
+def train_neuro_system(model_name: str, yaml_file_path: str) -> None:
     """
     Trains a YOLO model for image segmentation using a specified dataset.
 
@@ -20,7 +22,7 @@ def train_neuro_system(yolo_model: str, model_name: str, yaml_file_path: str) ->
     """
 
     # Load the pre-trained YOLO model for segmentation
-    model = YOLO(yolo_model, task="segmentation")
+    model = YOLO(yolo_model_suffix, task="segmentation")
 
     # Define the directory to save training results
     save_directory = Path("runs")
@@ -72,7 +74,7 @@ def train_neuro_system(yolo_model: str, model_name: str, yaml_file_path: str) ->
         # conf = 0.2,              # Confidence threshold for mAP calculation
     )
 
-def train_neuro_system_k_folds(dataset_path: str, yolo_model: str) -> None:
+def train_neuro_system_k_folds(dataset_path: str) -> None:
     """
     Trains the YOLO segmentation model using 5-fold cross-validation.
 
@@ -80,12 +82,13 @@ def train_neuro_system_k_folds(dataset_path: str, yolo_model: str) -> None:
     YAML configuration file for each fold, then calls `train_neuro_system` to train the model.
 
     Parameters:
-        None
+        dataset_path (str): The path to the dataset directory.
 
     Returns:
         None
     """
 
+    # Generate YAML configuration files for each fold
     yaml_files = generate_yaml_files(dataset_path)
     os.makedirs(Path("k_fold_configs"), exist_ok=True)
 
@@ -93,15 +96,18 @@ def train_neuro_system_k_folds(dataset_path: str, yolo_model: str) -> None:
         # Save the YAML configuration for this fold
         yaml_file_path = os.path.join("k_fold_configs", f"MSLesSeg_Dataset-{index+1}.yaml")
         
+        # Write the YAML data to the file
         with open(yaml_file_path, 'w') as yaml_file:
             yaml.dump(yaml_data, yaml_file, default_flow_style=False)
 
-        name_model = f"yolov11n-seg-me-kfold-{index+1}"
+        # Define the model name for this fold
+        name_model = f"{yolo_model}-kfold-{index+1}"
         logger.info(f"Training model {index+1}")
-        train_neuro_system(yolo_model, name_model, yaml_file_path)
+
+        # Train the model for this fold
+        train_neuro_system(name_model, yaml_file_path)
 
 if __name__ == "__main__":
-    # dataset_path = process_dataset()
-    yolo_model = "yolo11n-seg.pt"
+    dataset_path = process_dataset()
     dataset_path = "/home/rodrigocarreira/MRI-Neurodegenerative-Disease-Detection/neuro_disease_detector/data_processing"
-    train_neuro_system_k_folds(dataset_path, yolo_model)
+    train_neuro_system_k_folds(dataset_path)

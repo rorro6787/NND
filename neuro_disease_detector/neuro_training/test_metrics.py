@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import csv
 import os
+from pathlib import Path
 
 def update_confusion_matrix(metrics: dict, real_mask: np.ndarray, predicted_mask: np.ndarray) -> dict:
     """
@@ -105,16 +106,18 @@ def write_csv(metrics: dict, output_path: str) -> None:
     
     Example:
     metrics = {
-        "TP": 10, "FP": 2, "TN": 15, "FN": 1, "Recall": 0.91, "Precision": 0.83, "Acc": 0.92, "Sensibility": 0.89, "IOU": 0.75, "F1 Score": 0.87
+        ({"TP": 10, "FP": 2, "TN": 15, "FN": 1, "Recall": 0.91, "Precision": 0.83, "Acc": 0.92, "Sensibility": 0.89, "IOU": 0.75, "F1 Score": 0.87},
+         {"TP": 8, "FP": 3, "TN": 12, "FN": 2, "Recall": 0.80, "Precision": 0.73, "Acc": 0.85, "Sensibility": 0.78, "IOU": 0.70, "F1 Score": 0.76}),
+        # more items...
     }
     write_csv(metrics, '/path/to/directory')
     """
 
     # Extract dictionary keys to use as the header row for the CSV
-    header = list(metrics.keys())
+    header = list(metrics[0].keys())
 
     # Open the file at the specified path in write mode
-    with open(output_path, mode='w', newline='') as file:
+    with open(Path(output_path) / "metrics.csv" , mode='w', newline='') as file:
         # Initialize the CSV writer and write the header row
         writer = csv.writer(file)
         writer.writerow(header)
@@ -122,10 +125,12 @@ def write_csv(metrics: dict, output_path: str) -> None:
         # Iterate over the metrics dictionary and write rows to the file.
         for item in metrics:
             # Combine values from the dictionary.
-            row = list(item[0].values()) + list(item[1].values()) 
+            row = list(item.values())
             writer.writerow(row)
 
-def create_metrics_graphs(csv_path: str, test: bool = True) -> None:
+    return Path(output_path) / "metrics.csv"
+
+def create_metrics_graphs(csv_path: str, output_path: str) -> None:
     """
     Generates line graphs for metrics stored in a CSV file, saving the output as a PNG image.
 
@@ -138,15 +143,12 @@ def create_metrics_graphs(csv_path: str, test: bool = True) -> None:
       The file is named 'test.png' if test=True, otherwise 'val.png'.
     """
 
-    # Determine the output file name based on the `test` parameter
-    output_name = "test" if test else "val"
-
     # Read the CSV file into a DataFrame
     df = pd.read_csv(csv_path)
 
     # Set up the figure for the graphs
     plt.figure(figsize=(15, 12))  # Create a figure with a size of 15x12 inches
-    plt.suptitle(f"{'Test' if test else 'Validation'} graphs for 128 epochs", fontsize=20)  # Add a title
+    plt.suptitle("test graphs for 128 epochs", fontsize=20)  # Add a title
 
     for i, column in enumerate(df.columns):
         plt.subplot(3, 4, i + 1)
@@ -157,5 +159,5 @@ def create_metrics_graphs(csv_path: str, test: bool = True) -> None:
         plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig(os.path.join(os.path.dirname(csv_path), f"{output_name}.png")) 
+    plt.savefig(Path(output_path) / "metrics.png")  
     plt.close() 

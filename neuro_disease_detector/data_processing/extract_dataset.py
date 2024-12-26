@@ -185,7 +185,7 @@ def extract_dataset() -> bool:
     if os.path.exists(folder_name):
         logger.info(f"The dataset folder '{folder_name}' already exists.")
         patients_timepoints()
-        return True
+        return Path(folder_name).resolve()
     
     try:
         # Download and prepare the dataset
@@ -195,7 +195,7 @@ def extract_dataset() -> bool:
         prepare_dataset(folder_name)
         logger.info("Dataset downloaded and prepared successfully.")
         patients_timepoints()
-        return True
+        return Path(folder_name).resolve()
     except FileNotFoundError as fnf_error:
         logger.error(f"File not found error: {fnf_error}")
     except Exception as e:

@@ -4,7 +4,9 @@ import cv2
 import numpy as np
 import torch
 from pathlib import Path
-from neuro_disease_detector.neuro_training.validation_metrics import update_confusion_matrix, calculate_metrics
+from neuro_disease_detector.neuro_training.test_metrics import update_confusion_matrix, calculate_metrics
+from neuro_disease_detector.neuro_training.test_metrics import write_csv, create_metrics_graphs
+from neuro_disease_detector.neuro_training.__init__ import yolo_model
 
 def process_batch(paths: list, yolo_model_path: str) -> list:
     """
@@ -104,9 +106,9 @@ def stack_masks(masks: list, image_shape: tuple) -> np.ndarray:
     # Return the final binary image as an unsigned 8-bit integer array
     return binary_image.astype(np.uint8)
 
-def validate_batch(batch: dict, confusion_matrix: dict, yolo_model_path: str):
+def test_batch(batch: dict, confusion_matrix: dict, yolo_model_path: str):
     """
-    Validates a batch of images by generating predictions using a YOLO model and updating the confusion matrix
+    Test a batch of images by generating predictions using a YOLO model and updating the confusion matrix
     based on the real and predicted masks.
 
     Parameters:
@@ -117,7 +119,7 @@ def validate_batch(batch: dict, confusion_matrix: dict, yolo_model_path: str):
         for comparison with the predicted masks.
     
     confusion_matrix : dict
-        A dictionary representing the confusion matrix, which is updated during the validation process.
+        A dictionary representing the confusion matrix, which is updated during the Test process.
         It should contain counts for true positives, false positives, true negatives, and false negatives.
 
     yolo_model_path : str
@@ -160,10 +162,10 @@ def validate_batch(batch: dict, confusion_matrix: dict, yolo_model_path: str):
 
     return confusion_matrix
 
-def validation(dataset_path: str, fold: str, yolo_model_path: str):
+def test_neuro_system(dataset_path: str, fold: str, yolo_model_path: str) -> dict:
     """
-    Validates the YOLO model on a dataset, iterating over images and their corresponding ground truth masks in
-    batches, and updating the confusion matrix. The function then calculates and prints evaluation metrics based
+    Test the YOLO model on a dataset, iterating over images and their corresponding ground truth masks in
+    batches, and updating the confusion matrix. The function then calculates and prints test metrics based
     on the confusion matrix.
 
     Parameters:
@@ -172,7 +174,7 @@ def validation(dataset_path: str, fold: str, yolo_model_path: str):
         The file path to the dataset. It is used to locate the image and mask directories for the given fold.
     
     fold : str
-        The specific fold (subset) of the dataset to validate on. It corresponds to a directory within the dataset.
+        The specific fold (subset) of the dataset to test on. It corresponds to a directory within the dataset.
     
     yolo_model_path : str
         The file path to the trained YOLO model, which is used to generate predictions for the images.
@@ -180,13 +182,13 @@ def validation(dataset_path: str, fold: str, yolo_model_path: str):
     Returns:
     --------
     None
-        The function prints the calculated evaluation metrics based on the confusion matrix.
+        The function prints the calculated test metrics based on the confusion matrix.
 
     Notes:
     ------
     - The function processes the images in batches (with a batch size of 128).
-    - For each image, the corresponding mask is loaded, and the image-mask pair is added to the validation batch.
-    - Once the batch reaches the specified size, it is processed by the `validate_batch` function, which updates
+    - For each image, the corresponding mask is loaded, and the image-mask pair is added to the test batch.
+    - Once the batch reaches the specified size, it is processed by the `test_batch` function, which updates
       the confusion matrix.
     - After processing all the images in the fold, the confusion matrix is used to calculate performance metrics 
       (e.g., accuracy, precision, recall) using the `calculate_metrics` function.
@@ -197,13 +199,12 @@ def validation(dataset_path: str, fold: str, yolo_model_path: str):
     fold_path = os.path.join(dataset_path, f'MSLesSeg-Dataset-a/{fold}/images')
     masks_path = os.path.join(dataset_path, f'MSLesSeg-Dataset-a/masks')
 
-    # Initialize an empty dictionary for the validation batch and a batch size of 128
-    validation_batch = {}
+    # Initialize an empty dictionary for the test batch and a batch size of 128
+    test_batch = {}
     batch_size = 128
 
     # Initialize the confusion matrix with zero counts for TP, FP, TN, FN
     confusion_matrix = {"TP": 0, "FP": 0, "TN": 0, "FN": 0}
-
     # Iterate over each image in the fold's images directory
     for image in os.listdir(fold_path):
         # Skip non-PNG files
@@ -217,24 +218,97 @@ def validation(dataset_path: str, fold: str, yolo_model_path: str):
         # Read the corresponding mask image in grayscale
         mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
 
-        # Add the image and its corresponding mask to the validation batch
-        validation_batch[Path(fold_path) / image] = mask
+        # Add the image and its corresponding mask to the test batch
+        test_batch[Path(fold_path) / image] = mask
 
-        # Once the batch reaches the specified size, validate the batch and reset the batch
-        if len(validation_batch) == batch_size:
-            confusion_matrix = validate_batch(validation_batch, confusion_matrix, yolo_model_path)
-            validation_batch = {}
+        # Once the batch reaches the specified size, test the batch and reset the batch
+        if len(test_batch) == batch_size:
+            confusion_matrix = test_batch(test_batch, confusion_matrix, yolo_model_path)
+            test_batch = {}
     
     # Process any remaining images in the last batch
-    confusion_matrix = validate_batch(validation_batch, confusion_matrix, yolo_model_path)
+    confusion_matrix = test_batch(test_batch, confusion_matrix, yolo_model_path)
 
     # Calculate and print the evaluation metrics based on the confusion matrix
     metrics = calculate_metrics(confusion_matrix)
-    return metrics        
+    return confusion_matrix | metrics 
+
+def test_neuro_system_k_folds(training_results_path: str, dataset_path: str) -> None: 
+    """
+    Test a YOLO-based neuro system across K-folds and generate performance metrics over time.
+
+    This function iterates over a predefined set of folds, evaluates the performance 
+    of different YOLO model checkpoints within each fold, and produces CSV files and 
+    graphs summarizing the metrics for each fold.
+
+    Args:
+        training_results_path (str): 
+            Path to the directory where the results of training (organized by folds) are stored. 
+            Each fold should contain a `weights` subdirectory with YOLO model checkpoint files.
         
+        dataset_path (str): 
+            Path to the dataset being used for evaluation. This is required to test the neuro 
+            system with the YOLO models.
+
+    Workflow:
+        1. Define the folds to process (fold1, fold2, ..., fold5).
+        2. For each fold:
+           a. Access the `weights` directory containing YOLO checkpoint files.
+           b. Iterate over all checkpoint files (`*.pt`) excluding the `best.pt` file.
+           c. Test the neuro system using the `test_neuro_system` function with the dataset, 
+              current fold, and model checkpoint.
+           d. Collect the metrics over time for the fold.
+        3. Save the collected metrics for each fold to a CSV file using the `write_csv` function.
+        4. Generate and save visualizations of the metrics using the `create_metrics_graphs` function.
+
+    Note:
+        - The `test_neuro_system` function is assumed to handle the evaluation of a single 
+          model on the dataset for a given fold and return relevant metrics.
+        - The `write_csv` and `create_metrics_graphs` functions handle the creation of CSV 
+          files and graphs, respectively.
+
+    Returns:
+        None
+    """
+
+    # Define the folds to process
+    folds = ["kfold-1", "kfold-2", "kfold-3", "kfold-4", "kfold-5"]
+
+    # Iterate over each fold in the list
+    for index, fold in enumerate(folds):
+        # Define the path to the current fold within the training results directory
+        fold_path = Path(training_results_path) / f"{yolo_model}-{fold}"
+
+        # Initialize an empty list to store metrics over time for the current fold
+        metrics_over_time = []
+
+        # Iterate over the YOLO model checkpoint files in the fold's weights directory
+        yolo_models_path = Path(fold_path) / "weights"
+
+        # Iterate over all YOLO model checkpoint files in the weights directory
+        for model in os.listdir(yolo_models_path):
+            # Skip non-checkpoint files and the best.pt file
+            if(not model.endswith(".pt")) or model.endswith("best.pt"):
+                continue
+
+            # Construct the full path to the YOLO model checkpoint file
+            yolo_model_path = Path(yolo_models_path) / model    
+
+            # Test the neuro system using the current fold and YOLO model checkpoint
+            metrics = test_neuro_system(dataset_path, f"fold{index+1}", yolo_model_path)
+
+            # Append the metrics to the list for the current fold
+            metrics_over_time.append(metrics)
+
+        # Save the collected metrics for the current fold to a CSV file
+        csv_path = write_csv(metrics_over_time, training_results_path)
+
+        # Generate and save visualizations of the metrics for the current fold
+        create_metrics_graphs(csv_path, training_results_path)
+       
 if __name__ == "__main__":
-    yolo_model = "/home/rodrigocarreira/MRI-Neurodegenerative-Disease-Detection/neuro_disease_detector/neuro_training/runs/yolov8n-seg-me-kfold-5/weights/best.pt"
-    dataset_path = "/home/rodrigocarreira/MRI-Neurodegenerative-Disease-Detection/neuro_disease_detector/data_processing"
+    training_results_path = "/home/rorro6787/Escritorio/Universidad/4Carrera/TFG/neurodegenerative-disease-detector/neuro_disease_detector/neuro_training/runs"
+    dataset_path = "/home/rorro6787/Escritorio/Universidad/4Carrera/TFG/neurodegenerative-disease-detector/neuro_disease_detector/neuro_training"
     fold = "fold1"
-    validation(dataset_path, fold, yolo_model)
+    test_neuro_system_k_folds(training_results_path, dataset_path)
     

@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 import torch
 from pathlib import Path
-from neuro_disease_detector.neuro_training.validation_metrics import update_confusion_matrix, calculate_metrics
+from neuro_disease_detector.neuro_training.test_metrics import update_confusion_matrix, calculate_metrics
 
 def combine_masks(image_path: str, ground_truth_mask, predicted_mask=None) -> np.ndarray:
     image = cv2.imread(image_path)
