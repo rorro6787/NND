@@ -91,20 +91,18 @@ def stack_masks(masks: list, image_shape: tuple) -> np.ndarray:
 
     # Convert the list of PyTorch tensors to NumPy arrays
     masks = masks.data.cpu().numpy()
-    
-    # Initialize a blank binary image (all zeros) with the specified shape
-    binary_image = np.zeros(image_shape)
+    stack = cv2.resize(masks[0], (image_shape[1], image_shape[0]))
     
     # Iterate over each mask in the list
-    for mask in masks:
+    for mask in masks[1:]:
         # Resize the mask to match the target image shape
         resized_mask = cv2.resize(mask, (image_shape[1], image_shape[0]))
         
         # Combine the resized mask into the binary image using a logical OR operation
-        binary_image = np.logical_or(binary_image, resized_mask)
+        stack = np.logical_or(stack, resized_mask)
     
     # Return the final binary image as an unsigned 8-bit integer array
-    return binary_image.astype(np.uint8)
+    return stack.astype(np.uint8)
 
 def test_batch(batch: dict, confusion_matrix: dict, yolo_model_path: str):
     """
@@ -200,7 +198,7 @@ def test_neuro_system(dataset_path: str, fold: str, yolo_model_path: str) -> dic
     masks_path = os.path.join(dataset_path, f'MSLesSeg-Dataset-a/masks')
 
     # Initialize an empty dictionary for the test batch and a batch size of 128
-    test_batch = {}
+    batch = {}
     batch_size = 128
 
     # Initialize the confusion matrix with zero counts for TP, FP, TN, FN
@@ -219,15 +217,16 @@ def test_neuro_system(dataset_path: str, fold: str, yolo_model_path: str) -> dic
         mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
 
         # Add the image and its corresponding mask to the test batch
-        test_batch[Path(fold_path) / image] = mask
+        batch[Path(fold_path) / image] = mask
 
         # Once the batch reaches the specified size, test the batch and reset the batch
-        if len(test_batch) == batch_size:
-            confusion_matrix = test_batch(test_batch, confusion_matrix, yolo_model_path)
-            test_batch = {}
-    
+        if len(batch) == batch_size:
+            confusion_matrix = test_batch(batch, confusion_matrix, yolo_model_path)
+            batch = {}
+
     # Process any remaining images in the last batch
-    confusion_matrix = test_batch(test_batch, confusion_matrix, yolo_model_path)
+    if len(batch) > 0:
+        confusion_matrix = test_batch(batch, confusion_matrix, yolo_model_path)
 
     # Calculate and print the evaluation metrics based on the confusion matrix
     metrics = calculate_metrics(confusion_matrix)
