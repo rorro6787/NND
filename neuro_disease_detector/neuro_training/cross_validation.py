@@ -203,6 +203,7 @@ def test_neuro_system(dataset_path: str, fold: str, yolo_model_path: str) -> dic
 
     # Initialize the confusion matrix with zero counts for TP, FP, TN, FN
     confusion_matrix = {"TP": 0, "FP": 0, "TN": 0, "FN": 0}
+    
     # Iterate over each image in the fold's images directory
     for image in os.listdir(fold_path):
         # Skip non-PNG files

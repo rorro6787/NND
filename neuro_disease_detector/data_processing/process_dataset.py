@@ -423,20 +423,23 @@ def process_dataset() -> bool:
     url = "https://drive.google.com/uc?export=download&id=1JD3Hb4U93EiRDVC4SNg4IVGqFJSfehPB"
     folder_name = "MSLesSeg-Dataset-a"
 
+    # Check if dataset extraction is successful
+    dataset_folder = extract_dataset()
+    if not dataset_folder:
+        return False
+    
+    # Set the global dataset variable
+    global dataset0
+    dataset0 = dataset_folder
+    
     # Check if the folder already exists
     if os.path.exists(folder_name):
         logger.info(f"The training dataset folder '{folder_name}' already exists.")
         return Path(folder_name).resolve()
-
-    # Check if dataset extraction is successful
-    """
-    if not extract_dataset():
-        return False
-    """
     
     try:
-        # Extract the dataset (again, assuming this is required by the process)
         logger.info("Processing the training dataset...")
+        # Extract the dataset (again, assuming this is required by the process)
         download_dataset_from_cloud(url, folder_name)
         # process_training_dataset()
         logger.info("Training dataset processing finished.")
