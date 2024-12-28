@@ -19,6 +19,31 @@ def load_nifti_image(file_path: str) -> np.ndarray:
     # Obtain image data as a 3D numpy array
     return img.get_fdata()
 
+def load_nifti_image_bgr(file_path: str) -> np.ndarray:
+    """
+    Loads a NIfTI (.nii) file and returns its 3D image data as a NumPy array.
+
+    Parameters:
+    file_path (str): Path to the NIfTI file.
+
+    Returns:
+    numpy.ndarray: 3D array of the image data.
+    """
+
+    # Load the NIfTI file
+    img = nib.load(file_path)
+
+    # Obtain image data as a 3D numpy array
+    volume = img.get_fdata()
+
+    # Normalize the volume to the range [0, 255]
+    volume_uint8 = volume.astype(np.uint8)
+
+    # Add a BGR channel to the 3D volume
+    volume_bgr = np.stack([volume_uint8]*3, axis=-1)
+
+    return volume_bgr
+
 def extract_contours_mask(mask: np.ndarray) -> str:
     """
     Extracts the normalized coordinates of contours from a binary mask image.

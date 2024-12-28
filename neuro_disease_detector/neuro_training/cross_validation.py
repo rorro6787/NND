@@ -87,7 +87,7 @@ def stack_masks(masks: list, image_shape: tuple) -> np.ndarray:
 
     # If the masks list is empty, return a blank binary image of the desired shape
     if not masks:
-        return np.zeros(image_shape)
+        return np.zeros((image_shape[0], image_shape[1]))
 
     # Convert the list of PyTorch tensors to NumPy arrays
     masks = masks.data.cpu().numpy()
@@ -97,7 +97,7 @@ def stack_masks(masks: list, image_shape: tuple) -> np.ndarray:
     for mask in masks[1:]:
         # Resize the mask to match the target image shape
         resized_mask = cv2.resize(mask, (image_shape[1], image_shape[0]))
-        
+
         # Combine the resized mask into the binary image using a logical OR operation
         stack = np.logical_or(stack, resized_mask)
     
