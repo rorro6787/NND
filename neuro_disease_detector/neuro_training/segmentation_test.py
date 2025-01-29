@@ -8,6 +8,9 @@ import time
 from pathlib import Path
 import cv2
 
+import nibabel as nib
+
+
 def test_neuro_system(dataset_path: str, yolo_model_path: str) -> dict:
     # Construct the paths to the images and masks directories for the specified fold
     fold_path = os.path.join(dataset_path, f'MSLesSeg-Dataset/train')
@@ -71,7 +74,7 @@ def test_neuro_system(dataset_path: str, yolo_model_path: str) -> dict:
 def consensus(file_path: str, yolo_model_path: str) -> None: 
     volume = load_nifti_image_bgr(file_path)
     tam_x, tam_y, tam_z, _ = volume.shape
-    votes_volume = np.zeros((tam_x, tam_y, tam_z))
+    vv, vvs, vvc, vva = np.zeros((tam_x, tam_y, tam_z)), np.zeros((tam_x, tam_y, tam_z)), np.zeros((tam_x, tam_y, tam_z)), np.zeros((tam_x, tam_y, tam_z))
     
     slices_x = [volume[i,:,:] for i in range(tam_x)]
     slices_y = [volume[:,j,:] for j in range(tam_y)]
@@ -84,20 +87,23 @@ def consensus(file_path: str, yolo_model_path: str) -> None:
     
     for index, prediction_x in enumerate(predictions_x):
         masks = prediction_x.masks
-        stack = stack_masks(masks, votes_volume[index,:,:].shape)
-        votes_volume[index,:,:] = votes_volume[index,:,:] + stack
+        stack = stack_masks(masks, vv[index,:,:].shape)
+        vv[index,:,:] = vv[index,:,:] + stack
+        vvs[index,:,:] = vvs[index,:,:] + stack
 
     for index, prediction_y in enumerate(predictions_y):
         masks = prediction_y.masks
-        stack = stack_masks(masks, votes_volume[:,index,:].shape)
-        votes_volume[:,index,:] = votes_volume[:,index,:] + stack
+        stack = stack_masks(masks, vv[:,index,:].shape)
+        vv[:,index,:] = vv[:,index,:] + stack
+        vvc[:,index,:] = vvc[:,index,:] + stack
     
     for index, prediction_z in enumerate(predictions_z):
         masks = prediction_z.masks
-        stack = stack_masks(masks, votes_volume[:,:,index].shape)
-        votes_volume[:,:,index] = votes_volume[:,:,index] + stack
+        stack = stack_masks(masks, vv[:,:,index].shape)
+        vv[:,:,index] = vv[:,:,index] + stack
+        vva[:,:,index] = vva[:,:,index] + stack
     
-    return votes_volume
+    return vv, vvs, vvc, vva
 
 
 
@@ -105,8 +111,32 @@ def consensus(file_path: str, yolo_model_path: str) -> None:
 if __name__ == "__main__":
     
     yolo_model_path = "/home/rorro6787/Escritorio/Universidad/4Carrera/TFG/neurodegenerative-disease-detector/neuro_disease_detector/neuro_training/runs/yolov8n-seg-me-kfold-5/weights/best.pt"
-    dataset_path = "/home/rorro6787/Escritorio/Universidad/4Carrera/TFG/neurodegenerative-disease-detector/neuro_disease_detector/neuro_training"
-    res = test_neuro_system(dataset_path, yolo_model_path)
+    dataset_path = "/home/rorro6787/Escritorio/Universidad/4Carrera/TFG/neurodegenerative-disease-detector/neuro_disease_detector/neuro_training/MSLesSeg-Dataset/train/P6/T1/P6_T1_FLAIR.nii"
+    mask_path = "/home/rorro6787/Escritorio/Universidad/4Carrera/TFG/neurodegenerative-disease-detector/neuro_disease_detector/neuro_training/MSLesSeg-Dataset/train/P6/T1/P6_T1_MASK.nii"
+    vv, vvs, vvc, vva = consensus(dataset_path, yolo_model_path)
+    consenso = 2.0
 
-    print("Consenso: 4")
-    print(res)
+    votes = np.where(vv >= consenso, 1.0, 0.0)
+    volume = load_nifti_image(dataset_path)
+    mask = load_nifti_image(mask_path)
+    print("Consenso: 2")
+    print("Min votos: ", np.min(votes))
+    print("Max votos: ", np.max(votes))
+    print(votes.shape)
+
+
+    # Crear una imagen NIfTI sin matriz de transformación (identidad por defecto)
+    votes = nib.Nifti1Image(votes, affine=np.eye(4))  
+    mask = nib.Nifti1Image(mask, affine=np.eye(4))
+    volume = nib.Nifti1Image(volume, affine=np.eye(4))
+    vvs = nib.Nifti1Image(vvs, affine=np.eye(4))
+    vvc = nib.Nifti1Image(vvc, affine=np.eye(4))
+    vva = nib.Nifti1Image(vva, affine=np.eye(4))
+
+    # Guardar el archivo
+    nib.save(volume, "pruebas_3D/P6_T1_FLAIR/original.nii")
+    nib.save(mask, "pruebas_3D/P6_T1_FLAIR/mask.nii")
+    nib.save(votes, "pruebas_3D/P6_T1_FLAIR/model_consenso.nii")
+    nib.save(vvs, "pruebas_3D/P6_T1_FLAIR/model_sagital.nii")
+    nib.save(vvc, "pruebas_3D/P6_T1_FLAIR/model_coronal.nii")
+    nib.save(vva, "pruebas_3D/P6_T1_FLAIR/model_axial.nii")

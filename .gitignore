@@ -7,6 +7,8 @@ passwords.txt
 CSVs/
 outputs/
 
+pruebas_3D/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

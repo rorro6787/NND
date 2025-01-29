@@ -1,6 +1,7 @@
 import nibabel as nib
 import numpy as np
 import cv2
+import torch
 
 def load_nifti_image(file_path: str) -> np.ndarray:
     """
@@ -18,6 +19,34 @@ def load_nifti_image(file_path: str) -> np.ndarray:
 
     # Obtain image data as a 3D numpy array
     return img.get_fdata()
+
+def load_nifti_image_tensor(file_path: str) -> np.ndarray:
+    """
+    Loads a NIfTI (.nii) file and returns its 3D image data as a NumPy array.
+
+    Parameters:
+    file_path (str): Path to the NIfTI file.
+
+    Returns:
+    numpy.ndarray: 3D array of the image data.
+    """
+
+    # Load the NIfTI file
+    img = nib.load(file_path)
+
+    # Obtain image data as a 3D numpy array
+    volume = img.get_fdata()
+
+    # Normalize the volume to the range (0.0, 1.0)
+    volume = (volume - volume.min()) / (volume.max() - volume.min())
+    # volume_uint8 = volume.astype(np.uint8)
+
+    # Add a RGB channel to the 3D volume
+    volume_rgb = np.stack([volume]*3, axis=-1)
+
+    #volume_bgr = np.stack([volume_uint8]*3, axis=-1)
+
+    return torch.tensor(volume_rgb)
 
 def load_nifti_image_bgr(file_path: str) -> np.ndarray:
     """

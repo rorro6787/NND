@@ -115,6 +115,131 @@ def tests(fold: str, image: str = None, model_file: str = "yolov8n-seg-me.pt") -
     """
 
 
+from scipy.ndimage import rotate
+import numpy as np
+
+def get_rotation_matrix(angles):
+    theta_x, theta_y, theta_z = np.deg2rad(angles)
+    
+    R_x = np.array([
+        [1, 0, 0],
+        [0, np.cos(theta_x), -np.sin(theta_x)],
+        [0, np.sin(theta_x), np.cos(theta_x)]
+    ])
+    
+    R_y = np.array([
+        [np.cos(theta_y), 0, np.sin(theta_y)],
+        [0, 1, 0],
+        [-np.sin(theta_y), 0, np.cos(theta_y)]
+    ])
+    
+    R_z = np.array([
+        [np.cos(theta_z), -np.sin(theta_z), 0],
+        [np.sin(theta_z), np.cos(theta_z), 0],
+        [0, 0, 1]
+    ])
+    
+    # Combined rotation matrix
+    return R_z @ R_y @ R_x
+
+def consensus2(file_path: str, yolo_model_path: str, rotations: list = None) -> np.ndarray:
+    time9 = time.time()
+    if rotations is None:
+        rotations = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90]  # No rotation by default
+
+    volume = load_nifti_image_bgr(file_path)
+    tam_x, tam_y, tam_z, _ = volume.shape
+    votes_volume = np.zeros((tam_x, tam_y, tam_z))
+
+    model = YOLO(model=yolo_model_path, task="segment", verbose=False)
+    time_rotate = 0
+    time_yolo = 0
+    for angles in rotations:
+        # Rotate the volume
+        time1 = time.time()
+        rotated_volume = rotate(volume, angles, axes=(1, 2), reshape=False, order=1)
+        time2 = time.time()
+        time_rotate += time2 - time1
+
+        # Extract slices from the rotated volume
+        slices_x = [rotated_volume[i, :, :] for i in range(tam_x)]
+        slices_y = [rotated_volume[:, j, :] for j in range(tam_y)]
+        slices_z = [rotated_volume[:, :, k] for k in range(tam_z)]
+
+        # Get predictions
+        time4 = time.time()
+        predictions_x = model(slices_x, save=False, verbose=False, show_boxes=False)
+        predictions_y = model(slices_y, save=False, verbose=False, show_boxes=False)
+        predictions_z = model(slices_z, save=False, verbose=False, show_boxes=False)
+        time5 = time.time()
+        time_yolo += time5 - time4
+
+        # Initialize a temporary votes_volume for this rotation
+        temp_votes = np.zeros((tam_x, tam_y, tam_z))
+
+        # Accumulate votes in the rotated space
+        for index, prediction_x in enumerate(predictions_x):
+            masks = prediction_x.masks
+            stack = stack_masks(masks, temp_votes[index, :, :].shape)
+            temp_votes[index, :, :] += stack
+
+        for index, prediction_y in enumerate(predictions_y):
+            masks = prediction_y.masks
+            stack = stack_masks(masks, temp_votes[:, index, :].shape)
+            temp_votes[:, index, :] += stack
+
+        for index, prediction_z in enumerate(predictions_z):
+            masks = prediction_z.masks
+            stack = stack_masks(masks, temp_votes[:, :, index].shape)
+            temp_votes[:, :, index] += stack
+
+        # Undo the rotation for votes and add to main votes_volume
+        time1 = time.time()
+        inverse_rotated_votes = rotate(temp_votes, -angles, axes=(1, 2), reshape=False, order=1)
+        time2 = time.time()
+        time_rotate += time2 - time1
+        votes_volume += inverse_rotated_votes
+
+    time10 = time.time()
+    print("Time for rotate: ", time_rotate)
+    print("Time for YOLO: ", time_yolo) 
+    print("Time for all rotations: ", time10 - time9)
+
+    return votes_volume
+
+def consensus3(file_path: str, yolo_model_path: str, rotations: list = None) -> np.ndarray:
+    volume = load_nifti_image_tensor(file_path)
+    tam_x, tam_y, tam_z, _ = volume.shape
+    votes_volume = np.zeros((tam_x, tam_y, tam_z))
+
+    slices_x = [volume[i, :, :] for i in range(tam_x)]
+    slices_y = [volume[:, j, :] for j in range(tam_y)]
+    slices_z = [volume[:, :, k] for k in range(tam_z)]
+    
+    model = YOLO(model=yolo_model_path, task="segment", verbose=False)
+
+    predictions_x = model(slices_x, save=False, verbose=False, show_boxes=False)
+    predictions_y = model(slices_y, save=False, verbose=False, show_boxes=False)
+    predictions_z = model(slices_z, save=False, verbose=False, show_boxes=False)
+
+    for index, prediction_x in enumerate(predictions_x):
+        masks = prediction_x.masks
+        stack = stack_masks(masks, votes_volume[index,:,:].shape)
+        votes_volume[index,:,:] = votes_volume[index,:,:] + stack
+
+    for index, prediction_y in enumerate(predictions_y):
+        masks = prediction_y.masks
+        stack = stack_masks(masks, votes_volume[:,index,:].shape)
+        votes_volume[:,index,:] = votes_volume[:,index,:] + stack
+    
+    for index, prediction_z in enumerate(predictions_z):
+        masks = prediction_z.masks
+        stack = stack_masks(masks, votes_volume[:,:,index].shape)
+        votes_volume[:,:,index] = votes_volume[:,:,index] + stack
+    
+    return votes_volume
+
+
 
 if __name__ == "__main__":
     yolo_model = "/home/rodrigocarreira/MRI-Neurodegenerative-Disease-Detection/neuro_disease_detector/neuro_training/runs/yolov8n-seg-me-kfold-5/weights/best.pt"
