@@ -19,7 +19,7 @@ def test_neuro_system(dataset_path: str, yolo_model_path: str) -> dict:
     # Initialize the confusion matrix with zero counts for TP, FP, TN, FN
     confusion_matrix = {"TP": 0, "FP": 0, "TN": 0, "FN": 0}
     
-    for i in range(6):
+    for i in range(1):
         print(i)
         pd = f'P{i+1}'
         fold_path_aux = os.path.join(fold_path, f'P{i+1}')
@@ -29,6 +29,10 @@ def test_neuro_system(dataset_path: str, yolo_model_path: str) -> dict:
                 continue
             
             td = timepoint_directory.name
+            if td != "T1":
+                continue
+
+            print(td)
             fold_path_aux2 = os.path.join(fold_path_aux, td)
             mask = os.path.join(fold_path_aux2, f'{pd}_{td}_MASK.nii')
             flair = os.path.join(fold_path_aux2, f'{pd}_{td}_FLAIR.nii')
@@ -37,11 +41,13 @@ def test_neuro_system(dataset_path: str, yolo_model_path: str) -> dict:
 
 
             volume = load_nifti_image(mask) 
+            print(flair)
+            print(mask)
             votes_flair = consensus(flair, yolo_model_path)      
             votes_t1 = consensus(t1, yolo_model_path)
             votes_t2 = consensus(t2, yolo_model_path)
 
-            consenso = 4.0
+            consenso = 2.0
 
             votes = np.where(votes_flair >= consenso, 1.0, 0.0)
 
@@ -50,7 +56,7 @@ def test_neuro_system(dataset_path: str, yolo_model_path: str) -> dict:
             confusion_matrix["TN"] += np.sum((volume == 0) & (votes == 0))
             confusion_matrix["FP"] += np.sum((volume == 1) & (votes == 0))
             confusion_matrix["FN"] += np.sum((volume == 0) & (votes == 1))
-
+            """
             votes = np.where(votes_t1 >= consenso, 1.0, 0.0)
 
             confusion_matrix["TP"] += np.sum((volume == 1) & (votes == 1))
@@ -65,7 +71,7 @@ def test_neuro_system(dataset_path: str, yolo_model_path: str) -> dict:
             confusion_matrix["TN"] += np.sum((volume == 0) & (votes == 0))
             confusion_matrix["FP"] += np.sum((volume == 1) & (votes == 0))
             confusion_matrix["FN"] += np.sum((volume == 0) & (votes == 1))
-
+            """
     return confusion_matrix
     
 def consensus(file_path: str, yolo_model_path: str) -> None: 

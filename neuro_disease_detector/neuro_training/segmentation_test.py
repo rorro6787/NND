@@ -109,34 +109,88 @@ def consensus(file_path: str, yolo_model_path: str) -> None:
 
 
 if __name__ == "__main__":
-    
-    yolo_model_path = "/home/rorro6787/Escritorio/Universidad/4Carrera/TFG/neurodegenerative-disease-detector/neuro_disease_detector/neuro_training/runs/yolov8n-seg-me-kfold-5/weights/best.pt"
-    dataset_path = "/home/rorro6787/Escritorio/Universidad/4Carrera/TFG/neurodegenerative-disease-detector/neuro_disease_detector/neuro_training/MSLesSeg-Dataset/train/P6/T1/P6_T1_FLAIR.nii"
-    mask_path = "/home/rorro6787/Escritorio/Universidad/4Carrera/TFG/neurodegenerative-disease-detector/neuro_disease_detector/neuro_training/MSLesSeg-Dataset/train/P6/T1/P6_T1_MASK.nii"
-    vv, vvs, vvc, vva = consensus(dataset_path, yolo_model_path)
-    consenso = 2.0
+    confusion_matrix_votes = {"TP": 0, "FP": 0, "TN": 0, "FN": 0}
+    confusion_matrix_vvv = {"TP": 0, "FP": 0, "TN": 0, "FN": 0}
+    confusion_matrix_vvs = {"TP": 0, "FP": 0, "TN": 0, "FN": 0}
+    confusion_matrix_vvc = {"TP": 0, "FP": 0, "TN": 0, "FN": 0}
+    confusion_matrix_vva = {"TP": 0, "FP": 0, "TN": 0, "FN": 0}
 
-    votes = np.where(vv >= consenso, 1.0, 0.0)
-    volume = load_nifti_image(dataset_path)
-    mask = load_nifti_image(mask_path)
-    print("Consenso: 2")
-    print("Min votos: ", np.min(votes))
-    print("Max votos: ", np.max(votes))
-    print(votes.shape)
+    for i in range (6):
+        number = i+1
+
+        yolo_model_path = "/home/rorro6787/Escritorio/Universidad/4Carrera/TFG/neurodegenerative-disease-detector/neuro_disease_detector/neuro_training/runs/yolov8n-seg-me-kfold-5/weights/best.pt"
+        dataset_path = f"/home/rorro6787/Escritorio/Universidad/4Carrera/TFG/neurodegenerative-disease-detector/neuro_disease_detector/neuro_training/MSLesSeg-Dataset/train/P{number}/T1/P{number}_T1_FLAIR.nii"
+        mask_path = f"/home/rorro6787/Escritorio/Universidad/4Carrera/TFG/neurodegenerative-disease-detector/neuro_disease_detector/neuro_training/MSLesSeg-Dataset/train/P{number}/T1/P{number}_T1_MASK.nii"
+        print(dataset_path)
+        print(mask_path)
+        vv, vvs, vvc, vva = consensus(dataset_path, yolo_model_path)
+        consenso = 3.0
+       
+        votes = np.where(vv >= consenso, 1.0, 0.0)
+        vv = np.where(vv >= 1, 1.0, 0.0)
+        volume = load_nifti_image(dataset_path)
+        mask = load_nifti_image(mask_path)
+       
+        confusion_matrix_votes["TP"] += np.sum((mask == 1) & (votes == 1))
+        confusion_matrix_votes["TN"] += np.sum((mask == 0) & (votes == 0))
+        confusion_matrix_votes["FP"] += np.sum((mask == 1) & (votes == 0))
+        confusion_matrix_votes["FN"] += np.sum((mask == 0) & (votes == 1))
+
+        confusion_matrix_vvv["TP"] += np.sum((mask == 1) & (vv == 1))
+        confusion_matrix_vvv["TN"] += np.sum((mask == 0) & (vv == 0))
+        confusion_matrix_vvv["FP"] += np.sum((mask == 1) & (vv == 0))
+        confusion_matrix_vvv["FN"] += np.sum((mask == 0) & (vv == 1))
+
+        confusion_matrix_vvs["TP"] += np.sum((mask == 1) & (vvs == 1))
+        confusion_matrix_vvs["TN"] += np.sum((mask == 0) & (vvs == 0))
+        confusion_matrix_vvs["FP"] += np.sum((mask == 1) & (vvs == 0))
+        confusion_matrix_vvs["FN"] += np.sum((mask == 0) & (vvs == 1))
+
+        confusion_matrix_vvc["TP"] += np.sum((mask == 1) & (vvc == 1))
+        confusion_matrix_vvc["TN"] += np.sum((mask == 0) & (vvc == 0))
+        confusion_matrix_vvc["FP"] += np.sum((mask == 1) & (vvc == 0))
+        confusion_matrix_vvc["FN"] += np.sum((mask == 0) & (vvc == 1))
+
+        confusion_matrix_vva["TP"] += np.sum((mask == 1) & (vva == 1))
+        confusion_matrix_vva["TN"] += np.sum((mask == 0) & (vva == 0))
+        confusion_matrix_vva["FP"] += np.sum((mask == 1) & (vva == 0))
+        confusion_matrix_vva["FN"] += np.sum((mask == 0) & (vva == 1))
 
 
-    # Crear una imagen NIfTI sin matriz de transformación (identidad por defecto)
-    votes = nib.Nifti1Image(votes, affine=np.eye(4))  
-    mask = nib.Nifti1Image(mask, affine=np.eye(4))
-    volume = nib.Nifti1Image(volume, affine=np.eye(4))
-    vvs = nib.Nifti1Image(vvs, affine=np.eye(4))
-    vvc = nib.Nifti1Image(vvc, affine=np.eye(4))
-    vva = nib.Nifti1Image(vva, affine=np.eye(4))
+        # Crear una imagen NIfTI sin matriz de transformación (identidad por defecto)
+        votes = nib.Nifti1Image(votes, affine=np.eye(4))  
+        mask = nib.Nifti1Image(mask, affine=np.eye(4))
+        volume = nib.Nifti1Image(volume, affine=np.eye(4))
+        vvs = nib.Nifti1Image(vvs, affine=np.eye(4))
+        vvc = nib.Nifti1Image(vvc, affine=np.eye(4))
+        vva = nib.Nifti1Image(vva, affine=np.eye(4))
 
-    # Guardar el archivo
-    nib.save(volume, "pruebas_3D/P6_T1_FLAIR/original.nii")
-    nib.save(mask, "pruebas_3D/P6_T1_FLAIR/mask.nii")
-    nib.save(votes, "pruebas_3D/P6_T1_FLAIR/model_consenso.nii")
-    nib.save(vvs, "pruebas_3D/P6_T1_FLAIR/model_sagital.nii")
-    nib.save(vvc, "pruebas_3D/P6_T1_FLAIR/model_coronal.nii")
-    nib.save(vva, "pruebas_3D/P6_T1_FLAIR/model_axial.nii")
+        # Guardar el archivo
+        nib.save(volume, "pruebas_3D/P6_T1_FLAIR/original.nii")
+        nib.save(mask, "pruebas_3D/P6_T1_FLAIR/mask.nii")
+        nib.save(votes, "pruebas_3D/P6_T1_FLAIR/model_consenso.nii")
+        nib.save(vvs, "pruebas_3D/P6_T1_FLAIR/model_sagital.nii")
+        nib.save(vvc, "pruebas_3D/P6_T1_FLAIR/model_coronal.nii")
+        nib.save(vva, "pruebas_3D/P6_T1_FLAIR/model_axial.nii")
+
+
+    print(confusion_matrix_votes)
+    print(confusion_matrix_vvv)
+    print(confusion_matrix_vvs)
+    print(confusion_matrix_vvc)
+    print(confusion_matrix_vva)
+
+    ds_votes = (2*confusion_matrix_votes["TP"]) / (2*confusion_matrix_votes["TP"] + confusion_matrix_votes["FP"] + confusion_matrix_votes["FN"])
+    ds_vvv = (2*confusion_matrix_vvv["TP"]) / (2*confusion_matrix_vvv["TP"] + confusion_matrix_vvv["FP"] + confusion_matrix_vvv["FN"])
+    ds_vvs = (2*confusion_matrix_vvs["TP"]) / (2*confusion_matrix_vvs["TP"] + confusion_matrix_vvs["FP"] + confusion_matrix_vvs["FN"])
+    ds_vvc = (2*confusion_matrix_vvc["TP"]) / (2*confusion_matrix_vvc["TP"] + confusion_matrix_vvc["FP"] + confusion_matrix_vvc["FN"])
+    ds_vva = (2*confusion_matrix_vva["TP"]) / (2*confusion_matrix_vva["TP"] + confusion_matrix_vva["FP"] + confusion_matrix_vva["FN"])
+
+    print("DS consensus (2/3): ", ds_votes)
+    print("DS sagital: ", ds_vvs)
+    print("DS coronal: ", ds_vvc)
+    print("DS axial: ", ds_vva)
+    print("DS consensus (1/3): ", ds_vvv)
+
+
+        
