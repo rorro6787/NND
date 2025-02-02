@@ -74,8 +74,10 @@ def test_neuro_system(dataset_path: str, yolo_model_path: str) -> dict:
             """
     return confusion_matrix
     
-def consensus(file_path: str, yolo_model_path: str) -> None: 
-    volume = load_nifti_image_bgr(file_path)
+
+def prepare_info
+def consensus(volume: np.ndarray, yolo_model: YOLO) -> None: 
+    # volume = load_nifti_image_bgr(file_path)
     tam_x, tam_y, tam_z, _ = volume.shape
     votes_volume = np.zeros((tam_x, tam_y, tam_z))
     
@@ -83,10 +85,10 @@ def consensus(file_path: str, yolo_model_path: str) -> None:
     slices_y = [volume[:,j,:] for j in range(tam_y)]
     slices_z = [volume[:,:,k] for k in range(tam_z)]
 
-    model = YOLO(model=yolo_model_path, task="segment", verbose=False)
-    predictions_x = model(slices_x, save=False, verbose=False, show_boxes=False)
-    predictions_y = model(slices_y, save=False, verbose=False, show_boxes=False)
-    predictions_z = model(slices_z, save=False, verbose=False, show_boxes=False)
+    #model = YOLO(model=yolo_model_path, task="segment", verbose=False)
+    predictions_x = yolo_model(slices_x, save=False, verbose=False, show_boxes=False)
+    predictions_y = yolo_model(slices_y, save=False, verbose=False, show_boxes=False)
+    predictions_z = yolo_model(slices_z, save=False, verbose=False, show_boxes=False)
     
     for index, prediction_x in enumerate(predictions_x):
         masks = prediction_x.masks

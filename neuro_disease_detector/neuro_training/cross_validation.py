@@ -6,7 +6,7 @@ import torch
 from pathlib import Path
 from neuro_disease_detector.neuro_training.test_metrics import update_confusion_matrix, calculate_metrics
 from neuro_disease_detector.neuro_training.test_metrics import write_csv, create_metrics_graphs
-from neuro_disease_detector.neuro_training.__init__ import yolo_model
+from neuro_disease_detector.neuro_training.__init__ import yolo_model_no_suffix
 
 def process_batch(paths: list, yolo_model_path: str) -> list:
     """
@@ -277,7 +277,7 @@ def test_neuro_system_k_folds(training_results_path: str, dataset_path: str) -> 
     # Iterate over each fold in the list
     for index, fold in enumerate(folds):
         # Define the path to the current fold within the training results directory
-        fold_path = Path(training_results_path) / f"{yolo_model}-{fold}"
+        fold_path = Path(training_results_path) / f"{yolo_model_no_suffix}-{fold}"
 
         # Initialize an empty list to store metrics over time for the current fold
         metrics_over_time = []
