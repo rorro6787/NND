@@ -1,6 +1,6 @@
-from neuro_disease_detector.utils.utils_dataset import load_nifti_image_bgr
-from neuro_disease_detector.utils.utils_dataset import load_nifti_image
-from neuro_disease_detector.neuro_training.cross_validation import stack_masks
+from neuro_disease_detector.yolo.utils.utils_dataset import load_nifti_image_bgr
+from neuro_disease_detector.yolo.utils.utils_dataset import load_nifti_image
+from neuro_disease_detector.yolo.neuro_training.cross_validation import stack_masks
 from ultralytics import YOLO
 import numpy as np
 import os

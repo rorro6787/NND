@@ -1,10 +1,10 @@
 from ultralytics import YOLO
 from pathlib import Path
-from neuro_disease_detector.utils.utils_training import generate_yaml_files
-from neuro_disease_detector.data_processing.process_dataset import process_dataset
+from neuro_disease_detector.yolo.utils.utils_training import generate_yaml_files
+from neuro_disease_detector.yolo.data_processing.process_dataset import process_dataset
 import yaml
 import os
-from neuro_disease_detector.neuro_training.__init__  import yolo_model, yolo_model_suffix
+from neuro_disease_detector.yolo.neuro_training.__init__  import yolo_model, yolo_model_suffix
 
 from neuro_disease_detector.logger import get_logger
 logger = get_logger(__name__)

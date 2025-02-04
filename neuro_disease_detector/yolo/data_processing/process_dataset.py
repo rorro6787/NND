@@ -4,8 +4,8 @@ from typing import Tuple
 import numpy as np
 import matplotlib.pyplot as plt
 
-from neuro_disease_detector.utils.utils_dataset import extract_contours_mask, load_nifti_image
-from neuro_disease_detector.data_processing.extract_dataset import extract_dataset, download_dataset_from_cloud
+from neuro_disease_detector.yolo.utils.utils_dataset import extract_contours_mask, load_nifti_image
+from neuro_disease_detector.yolo.data_processing.extract_dataset import extract_dataset, download_dataset_from_cloud
 
 from neuro_disease_detector.logger import get_logger
 logger = get_logger(__name__)
