@@ -7,6 +7,8 @@ passwords.txt
 CSVs/
 outputs/
 nnUNet_raw/
+nnUNet_preprocessed/
+nnUNet_results/
 
 pruebas_3D/
 
