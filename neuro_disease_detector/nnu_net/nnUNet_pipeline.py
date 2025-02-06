@@ -1,17 +1,17 @@
-import subprocess
-import shutil
-import os
+import subprocess, zipfile, shutil, gdown, os
 
 from neuro_disease_detector.nnu_net.__init__ import Configuration, Fold, Trainer
 from neuro_disease_detector.nnu_net.utils import get_patient_by_test_id
+from neuro_disease_detector.logger import get_logger
+
+logger = get_logger(__name__)
 cwd = os.getcwd()
 
-def nnUNet_init(dataset_dir: str, dataset_id, configuration: Configuration, fold: Fold, trainer: Trainer):
+def nnUNet_init(dataset_id, configuration: Configuration, fold: Fold, trainer: Trainer):
     """
     Initialize the nnUNet model using the specified dataset and configuration.
 
     Args:
-        dataset_dir (str): The path to the dataset directory.
         dataset_id (str): The ID of the dataset.
         configuration (Configuration): The configuration to use for training.
         fold (Fold): The fold to use for training.
@@ -22,9 +22,6 @@ def nnUNet_init(dataset_dir: str, dataset_id, configuration: Configuration, fold
 
     Example:
         >>> from neuro_disease_detector.nnu_net.nnUNet_pipeline import nnUNet_init
-        >>> 
-        >>> # Data source
-        >>> dataset_path = f"{cwd}"
         >>>
         >>> # Dataset ID
         >>> dataset_id = "024"
@@ -39,9 +36,12 @@ def nnUNet_init(dataset_dir: str, dataset_id, configuration: Configuration, fold
         >>> trainer = Trainer.EPOCHS_20
         >>> 
         >>> # Initialize and train the nnUNet model
-        >>> nnUNet_init(dataset_path, dataset_id, configuration, fold, trainer)
+        >>> nnUNet_init(dataset_id, configuration, fold, trainer)
     """
     
+    dataset_dir  = f"{cwd}/MSLesSeg-Dataset"
+    download_dataset_from_cloud(dataset_dir)
+
     dataset_name = f"Dataset{dataset_id}_MSLesSeg"
     nnUNet_datapath = f"{cwd}/nnUNet_raw/{dataset_name}"
     
@@ -88,13 +88,15 @@ def process_dataset(process_data: str, dataset_name: str, dataset_id: str):
         None
     """
 
-    if not os.path.exists(f"{process_data}/{dataset_name}"):
-        # Define and run the command to preprocess the dataset
-        command = ["nnUNetv2_plan_and_preprocess", "-d", dataset_id, "--verify_dataset_integrity", "-np", "1"]
-        subprocess.run(command, env=os.environ, check=True)
+    if os.path.exists(f"{process_data}/{dataset_name}"):
+        return
+    
+    # Define and run the command to preprocess the dataset
+    command = ["nnUNetv2_plan_and_preprocess", "-d", dataset_id, "--verify_dataset_integrity", "-np", "1"]
+    subprocess.run(command, env=os.environ, check=True)
 
-        # Copy the splits_final.json file to the appropriate directory
-        shutil.copy(f"{cwd}/splits_final.json", f"{process_data}/{dataset_name}/splits_final.json")
+    # Copy the splits_final.json file to the appropriate directory
+    shutil.copy(f"{cwd}/config/splits_final.json", f"{process_data}/{dataset_name}/splits_final.json")
 
 def configure_environment(raw_data: str, process_data: str, results: str):
     """
@@ -132,7 +134,7 @@ def create_nnu_dataset(dataset_dir: str, nnUNet_datapath: str):
     """
 
     # Define the path where the nnUNet dataset will be stored
-    dataset_path = f"{dataset_dir}/MSLesSeg-Dataset/train"
+    dataset_path = f"{dataset_dir}/train"
 
     if os.path.exists(nnUNet_datapath):
         return
@@ -184,7 +186,8 @@ def create_nnu_dataset(dataset_dir: str, nnUNet_datapath: str):
             shutil.copy(t2_path, f"{nnUNet_datapath}/images{train_test}/BRATS_{id}_0002.nii.gz")
             shutil.copy(mask_path, f"{nnUNet_datapath}/labels{train_test}/BRATS_{id}.nii.gz")
 
-    shutil.copy(f"{cwd}/dataset.json", f"{nnUNet_datapath}/dataset.json")
+    # Copy the dataset.json file to the nnUNet dataset directory
+    shutil.copy(f"{cwd}/config/dataset.json", f"{nnUNet_datapath}/dataset.json")
 
 def _split_assign(pd: int):
     """
@@ -198,7 +201,7 @@ def _split_assign(pd: int):
     """
 
     # Define the boundaries for each fold
-    folds = [1, 6, 12, 19, 28, 41]
+    folds = [1, 7, 14, 23, 42, 54]
 
     # Assign the patient to a fold based on their ID
     for i, start in enumerate(folds[:-1]):
@@ -206,14 +209,45 @@ def _split_assign(pd: int):
         if pd >= start and pd < folds[i + 1]:
             return f"fold{i + 1}"
     # If the patient ID is not within the range of any fold, return "test"
-    return "test"
+    return "Error"
+
+def download_dataset_from_cloud(folder_name: str) -> None:
+    """
+    Downloads and extracts a dataset from a cloud storage URL.
+    
+    Args:
+        folder_name (str): The folder where the dataset will be extracted.
+    
+    Returns:
+        None
+
+    Raises:
+        FileNotFoundError: If the downloaded file cannot be found.
+        zipfile.BadZipFile: If the ZIP file is invalid or corrupted.
+    """
+
+    if os.path.exists(folder_name):
+        return
+    
+    url = "https://drive.google.com/uc?export=download&id=16PZNfDxugW326BYTt-9k0EnQk2uztCbZ"
+
+    # Name of the ZIP file to save locally
+    dataset_zip = f"{folder_name}.zip"
+
+    # Download the dataset from the cloud storage URL
+    gdown.download(url, dataset_zip, quiet=False)
+    
+    # Extract the dataset from the ZIP file
+    with zipfile.ZipFile(dataset_zip, "r") as zip_ref:
+        zip_ref.extractall(folder_name)
+
+    # Remove the ZIP file after extraction
+    os.remove(dataset_zip)
 
 if __name__ == "__main__":
-    dataset_path = f"{cwd}"
     dataset_id = "024"
     configuration = Configuration.FULL_3D
     fold = Fold.FOLD_1
     trainer = Trainer.EPOCHS_20
     
-    nnUNet_init(dataset_path, dataset_id, configuration, fold, trainer)
-    # print(get_patient_by_test_id("30"))
+    nnUNet_init(dataset_id, configuration, fold, trainer)

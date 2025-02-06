@@ -1,14 +1,35 @@
+import os
+from neuro_disease_detector.nnu_net.nnUNet_pipeline import _split_assign
 
 num_timepoints_per_patient = [3,4,4,3,2,3,2,2,3,2,2,4,2,4,1,1,1,1,4,3,1,2,1,1,1,1,1,2,1,0,2,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2]
 
 fold_to_patient = {
-      "fold1": (1, 6),
-      "fold2": (6, 12),
-      "fold3": (12, 19),
-      "fold4": (19, 28),
-      "fold5": (28, 41),
-      "test": (41, 54)
+      "fold1": (1, 7),
+      "fold2": (7, 14),
+      "fold3": (14, 23),
+      "fold4": (23, 42),
+      "fold5": (42, 54),
 }
+
+
+def patients(dataset_path: str = f"{os.getcwd()}/MSLesSeg-Dataset/train"):
+    timepoints = []
+    for pd in range(1, 54):
+        if pd == 30:
+            timepoints.append(0)
+            continue
+        pd_path = f"{dataset_path}/P{pd}"
+        td_count = 0
+        for td in range(1, 5):
+            td_path = f"{pd_path}/T{td}"
+            if not os.path.exists(td_path):
+                break
+            td_count += 1
+        timepoints.append(td_count)
+
+    print(timepoints)
+
+
 
 def get_patient_by_test_id(test_id: int|str):
     """
@@ -42,3 +63,14 @@ def get_patient_by_test_id(test_id: int|str):
     return "ID not found"
 
 
+# print(get_patient_by_test_id(92))
+"""
+fold1 = ("BRATS_1", "BRATS_19")
+fold2 = ("BRATS_20", "BRATS_36")
+fold3 = ("BRATS_37", "BRATS_54")
+fold4 = ("BRATS_55", "BRATS_75")
+fold5 = ("BRATS_76", "BRATS_92")
+"""
+
+print(get_patient_by_test_id("30"))
+print(_split_assign(0))
