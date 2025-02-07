@@ -40,19 +40,78 @@ def nnUNet_init(dataset_id, configuration: Configuration, fold: Fold, trainer: T
     """
     
     dataset_dir  = f"{cwd}/MSLesSeg-Dataset"
-    download_dataset_from_cloud(dataset_dir)
-
     dataset_name = f"Dataset{dataset_id}_MSLesSeg"
     nnUNet_datapath = f"{cwd}/nnUNet_raw/{dataset_name}"
-    
     raw_data = f"{cwd}/nnUNet_raw"
     process_data = f"{cwd}/nnUNet_preprocessed"
-    results = f"{cwd}/nnUNet_results"
+    train_results = f"{cwd}/nnUNet_results"
+    test_results = f"{cwd}/nnUNet_raw/nnUNet_tests"
 
+    download_dataset_from_cloud(dataset_dir)
     create_nnu_dataset(dataset_dir, nnUNet_datapath)
-    configure_environment(raw_data, process_data, results)  
+    configure_environment(raw_data, process_data, train_results)  
     process_dataset(process_data, dataset_name, dataset_id)
     train_nnUNet(dataset_id, configuration, fold, trainer)
+    inference_test(nnUNet_datapath, test_results, dataset_id, configuration, trainer, fold)
+    evaluate_test_results(nnUNet_datapath, test_results)
+
+def evaluate_test_results(nnUNet_datapath: str, test_results: str):
+    """
+    Evaluate the test results using the trained nnUNet model.
+
+    Args:
+        nnUNet_datapath (str): The path to the nnUNet dataset.
+        test_results (str): The path to the test results.
+
+    Returns:
+        None
+    """
+
+    test_path = f"{nnUNet_datapath}/imagesTs"
+
+    # Define the command to evaluate the test results
+    command = ["nnUNetv2_evaluate_folder", 
+               test_path,
+               test_results, 
+               "-djfile", f"{test_results}/dataset.json", 
+               "-pfile", f"{test_results}/plans.json"]
+    
+    subprocess.run(command, env=os.environ, check=True)
+
+def inference_test(nnUNet_datapath: str, test_results: str, dataset_id: str, 
+                   configuration: Configuration = Configuration.FULL_3D, 
+                   trainer: Trainer = Trainer.EPOCHS_20,
+                   fold: Fold = Fold.FOLD_1):
+    """
+    Perform inference on the test data using the trained nnUNet model.
+
+    Args:
+        nnUNet_datapath (str): The path to the nnUNet dataset.
+        output_path (str): The path to save the output predictions.
+        dataset_id (str): The ID of the dataset.
+        configuration (Configuration): The configuration used for training.
+        trainer (Trainer): The trainer used for training.
+        fold (Fold): The fold used for training.
+
+    Returns:
+        None
+
+    """
+
+    # Create the necessary directories for the output predictions
+    os.makedirs(test_results, exist_ok=True)
+    test_path = f"{nnUNet_datapath}/imagesTs"
+
+    # Define the command to perform inference on the test data
+    command = ["nnUNetv2_predict", 
+               "-i", test_path, 
+               "-o", test_results, 
+               "-d", dataset_id,
+               "-c", configuration.value, 
+               "-tr", trainer.value,
+               "-f", fold.value]
+    
+    subprocess.run(command, env=os.environ, check=True)
 
 def train_nnUNet(dataset_id: str, 
                  configuration: Configuration = Configuration.FULL_3D, 
@@ -72,7 +131,12 @@ def train_nnUNet(dataset_id: str,
     """
 
     # Define the command to train the nnUNet model
-    command = ["nnUNetv2_train", dataset_id, configuration.value, fold.value, "-tr", trainer.value]
+    command = ["nnUNetv2_train", 
+               dataset_id, 
+               configuration.value, 
+               fold.value, 
+               "-tr", trainer.value]
+    
     subprocess.run(command, env=os.environ, check=True)
     
 def process_dataset(process_data: str, dataset_name: str, dataset_id: str):
@@ -248,6 +312,6 @@ if __name__ == "__main__":
     dataset_id = "024"
     configuration = Configuration.FULL_3D
     fold = Fold.FOLD_1
-    trainer = Trainer.EPOCHS_1
+    trainer = Trainer.EPOCHS_5
     
     nnUNet_init(dataset_id, configuration, fold, trainer)
