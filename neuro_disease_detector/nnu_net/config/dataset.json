@@ -8,7 +8,8 @@
         "background": 0,
         "SLM": 1
     }, 
-    "numTraining": 92, 
+    "numTraining": 87, 
+    "numTest": 5,
     "file_ending": ".nii.gz",
     "overwrite_image_reader_writer": "SimpleITKIO"
 }

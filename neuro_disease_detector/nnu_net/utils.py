@@ -1,14 +1,20 @@
 import os
 from neuro_disease_detector.nnu_net.nnUNet_pipeline import _split_assign
 
-num_timepoints_per_patient = [3,4,4,3,2,3,2,2,3,2,2,4,2,4,1,1,1,1,4,3,1,2,1,1,1,1,1,2,1,0,2,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2]
+num_timepoints_per_patient = [3,4,4,3,2,3,   
+                              2,2,3,2,2,4,2,  
+                              4,1,1,1,1,4,3,1,1,
+                              2,1,1,1,1,2,1,0,2,1,2,1,1,1,   
+                              1,1,1,1,1,1,1,2,2,2,2,1,1,     
+                              1,1,1,2]
 
 fold_to_patient = {
       "fold1": (1, 7),
       "fold2": (7, 14),
       "fold3": (14, 23),
-      "fold4": (23, 42),
-      "fold5": (42, 54),
+      "fold4": (23, 37),
+      "fold5": (37, 50),
+      "test": (50, 54)
 }
 
 
@@ -67,10 +73,21 @@ def get_patient_by_test_id(test_id: int|str):
 """
 fold1 = ("BRATS_1", "BRATS_19")
 fold2 = ("BRATS_20", "BRATS_36")
-fold3 = ("BRATS_37", "BRATS_54")
-fold4 = ("BRATS_55", "BRATS_75")
-fold5 = ("BRATS_76", "BRATS_92")
+fold3 = ("BRATS_37", "BRATS_53")
+fold4 = ("BRATS_54", "BRATS_70")
+fold5 = ("BRATS_71", "BRATS_87")
 """
 
-print(get_patient_by_test_id("30"))
-print(_split_assign(0))
+fold_to_patient = {
+      "fold1": (1, 7),
+      "fold2": (7, 14),
+      "fold3": (14, 23),
+      "fold4": (23, 37),
+      "fold5": (37, 50),
+      "test": (50, 54)
+}
+
+# print(get_patient_by_test_id("87"))
+# print(_split_assign(1))
+
+# patients()

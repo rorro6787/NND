@@ -1,7 +1,7 @@
 import subprocess, zipfile, shutil, gdown, os
 
 from neuro_disease_detector.nnu_net.__init__ import Configuration, Fold, Trainer
-from neuro_disease_detector.nnu_net.utils import get_patient_by_test_id
+# from neuro_disease_detector.nnu_net.utils import get_patient_by_test_id
 from neuro_disease_detector.logger import get_logger
 
 logger = get_logger(__name__)
@@ -141,10 +141,10 @@ def create_nnu_dataset(dataset_dir: str, nnUNet_datapath: str):
     
     # Create necessary directories for the nnUNet dataset
     os.makedirs(nnUNet_datapath)
-    os.makedirs(f"{nnUNet_datapath}/imagesTr")  # Training images folder
-    os.makedirs(f"{nnUNet_datapath}/imagesTs")  # Testing images folder
-    os.makedirs(f"{nnUNet_datapath}/labelsTr")  # Training labels folder
-    os.makedirs(f"{nnUNet_datapath}/labelsTs")  # Testing labels folder
+    os.makedirs(f"{nnUNet_datapath}/imagesTr")  
+    os.makedirs(f"{nnUNet_datapath}/imagesTs")  
+    os.makedirs(f"{nnUNet_datapath}/labelsTr")  
+    os.makedirs(f"{nnUNet_datapath}/labelsTs")  
     
     # Initialize a unique id counter for each subject
     id = 0
@@ -178,7 +178,7 @@ def create_nnu_dataset(dataset_dir: str, nnUNet_datapath: str):
 
             # Assign the subject to either the 'train' or 'test' fold
             fold = _split_assign(pd)  # Function to assign fold (train/test)
-            train_test = "Ts" if fold == "test" else "Tr"  # Test or Train based on fold
+            train_test = "Ts" if fold == "Test" else "Tr"  # Test or Train based on fold
 
             # Copy the images and mask to the appropriate directories
             shutil.copy(flair_path, f"{nnUNet_datapath}/images{train_test}/BRATS_{id}_0000.nii.gz")
@@ -201,7 +201,7 @@ def _split_assign(pd: int):
     """
 
     # Define the boundaries for each fold
-    folds = [1, 7, 14, 23, 42, 54]
+    folds = [1, 7, 14, 23, 37, 50]
 
     # Assign the patient to a fold based on their ID
     for i, start in enumerate(folds[:-1]):
@@ -209,7 +209,7 @@ def _split_assign(pd: int):
         if pd >= start and pd < folds[i + 1]:
             return f"fold{i + 1}"
     # If the patient ID is not within the range of any fold, return "test"
-    return "Error"
+    return "Test"
 
 def download_dataset_from_cloud(folder_name: str) -> None:
     """
@@ -229,7 +229,7 @@ def download_dataset_from_cloud(folder_name: str) -> None:
     if os.path.exists(folder_name):
         return
     
-    url = "https://drive.google.com/uc?export=download&id=16PZNfDxugW326BYTt-9k0EnQk2uztCbZ"
+    url = "https://drive.google.com/uc?export=download&id=1A3ZpXHe-bLpaAI7BjPTSkZHyQwEP3pIi"
 
     # Name of the ZIP file to save locally
     dataset_zip = f"{folder_name}.zip"
@@ -248,6 +248,6 @@ if __name__ == "__main__":
     dataset_id = "024"
     configuration = Configuration.FULL_3D
     fold = Fold.FOLD_1
-    trainer = Trainer.EPOCHS_20
+    trainer = Trainer.EPOCHS_1
     
     nnUNet_init(dataset_id, configuration, fold, trainer)
