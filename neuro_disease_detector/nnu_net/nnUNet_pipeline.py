@@ -44,7 +44,7 @@ def nnUNet_init(dataset_id: str, configuration: Configuration, fold: Fold, train
     raw_data = f"{cwd}/nnUNet_raw"
     process_data = f"{cwd}/nnUNet_preprocessed"
     train_results = f"{cwd}/nnUNet_results"
-    test_results = f"{cwd}/nnUNet_raw/nnUNet_tests"
+    test_results = f"{nnUNet_datapath}/nnUNet_tests_{fold.value}"
 
     download_dataset_from_cloud(dataset_dir)
     create_nnu_dataset(dataset_dir, nnUNet_datapath)
@@ -66,7 +66,7 @@ def evaluate_test_results(nnUNet_datapath: str, test_results: str):
         None
     """
 
-    test_path = f"{nnUNet_datapath}/imagesTs"
+    test_path = f"{nnUNet_datapath}/labelsTs"
 
     # Define the command to evaluate the test results
     command = ["nnUNetv2_evaluate_folder", 
