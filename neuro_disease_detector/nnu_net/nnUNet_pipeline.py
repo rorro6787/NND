@@ -1,13 +1,11 @@
 import subprocess, zipfile, shutil, gdown, os
-
 from neuro_disease_detector.nnu_net.__init__ import Configuration, Fold, Trainer
-# from neuro_disease_detector.nnu_net.utils import get_patient_by_test_id
 from neuro_disease_detector.logger import get_logger
 
 logger = get_logger(__name__)
 cwd = os.getcwd()
 
-def nnUNet_init(dataset_id, configuration: Configuration, fold: Fold, trainer: Trainer):
+def nnUNet_init(dataset_id: str, configuration: Configuration, fold: Fold, trainer: Trainer):
     """
     Initialize the nnUNet model using the specified dataset and configuration.
 
@@ -22,6 +20,7 @@ def nnUNet_init(dataset_id, configuration: Configuration, fold: Fold, trainer: T
 
     Example:
         >>> from neuro_disease_detector.nnu_net.nnUNet_pipeline import nnUNet_init
+        >>> from neuro_disease_detector.nnu_net.__init__ import Configuration, Fold, Trainer
         >>>
         >>> # Dataset ID
         >>> dataset_id = "024"
@@ -87,7 +86,7 @@ def inference_test(nnUNet_datapath: str, test_results: str, dataset_id: str,
 
     Args:
         nnUNet_datapath (str): The path to the nnUNet dataset.
-        output_path (str): The path to save the output predictions.
+        test_results (str): The path to save the output predictions.
         dataset_id (str): The ID of the dataset.
         configuration (Configuration): The configuration used for training.
         trainer (Trainer): The trainer used for training.
