@@ -196,11 +196,33 @@ def create_nnu_dataset(dataset_dir: str, nnUNet_datapath: str):
         None
     """
 
-    # Define the path where the nnUNet dataset will be stored
-    dataset_path = f"{dataset_dir}/train"
+    def _split_assign(pd: int):
+        """
+        Assign a patient to a fold based on the patient ID.
+
+        Args:
+            pd (int): The patient ID.
+
+        Returns:
+            str: The fold to which the patient belongs.
+        """
+
+        # Define the boundaries for each fold
+        folds = [1, 7, 14, 23, 37, 50]
+
+        # Assign the patient to a fold based on their ID
+        for i, start in enumerate(folds[:-1]):
+            # If the patient ID is within the range of the current fold, return the fold
+            if pd >= start and pd < folds[i + 1]:
+                return f"fold{i + 1}"
+        # If the patient ID is not within the range of any fold, return "test"
+        return "Test"
 
     if os.path.exists(nnUNet_datapath):
         return
+    
+    # Define the path where the nnUNet dataset will be stored
+    dataset_path = f"{dataset_dir}/train"
     
     # Create necessary directories for the nnUNet dataset
     os.makedirs(nnUNet_datapath)
@@ -239,9 +261,8 @@ def create_nnu_dataset(dataset_dir: str, nnUNet_datapath: str):
             t2_path = f"{td_path}/P{pd}_T{td}_T2.nii"
             mask_path = f"{td_path}/P{pd}_T{td}_MASK.nii"
 
-            # Assign the subject to either the 'train' or 'test' fold
-            fold = _split_assign(pd)  # Function to assign fold (train/test)
-            train_test = "Ts" if fold == "Test" else "Tr"  # Test or Train based on fold
+            # Assign the patient to a fold based on their ID
+            train_test = "Ts" if _split_assign(pd) == "Test" else "Tr"  
 
             # Copy the images and mask to the appropriate directories
             shutil.copy(flair_path, f"{nnUNet_datapath}/images{train_test}/BRATS_{id}_0000.nii.gz")
@@ -251,28 +272,6 @@ def create_nnu_dataset(dataset_dir: str, nnUNet_datapath: str):
 
     # Copy the dataset.json file to the nnUNet dataset directory
     shutil.copy(f"{cwd}/config/dataset.json", f"{nnUNet_datapath}/dataset.json")
-
-def _split_assign(pd: int):
-    """
-    Assign a patient to a fold based on the patient ID.
-
-    Args:
-        pd (int): The patient ID.
-
-    Returns:
-        str: The fold to which the patient belongs.
-    """
-
-    # Define the boundaries for each fold
-    folds = [1, 7, 14, 23, 37, 50]
-
-    # Assign the patient to a fold based on their ID
-    for i, start in enumerate(folds[:-1]):
-        # If the patient ID is within the range of the current fold, return the fold
-        if pd >= start and pd < folds[i + 1]:
-            return f"fold{i + 1}"
-    # If the patient ID is not within the range of any fold, return "test"
-    return "Test"
 
 def download_dataset_from_cloud(folder_name: str) -> None:
     """
