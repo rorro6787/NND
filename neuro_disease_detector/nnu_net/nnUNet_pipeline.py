@@ -40,12 +40,13 @@ def nnUNet_init(dataset_id: str, configuration: Configuration, fold: Fold, train
         >>> nnUNet_init(dataset_id, configuration, fold, trainer)
     """
     
-    dataset_dir  = f"{cwd}/MSLesSeg-Dataset"
+    nnunet_cwd = f"{cwd}/nnUNet"
+    dataset_dir  = f"{nnunet_cwd}/MSLesSeg-Dataset"
     dataset_name = f"Dataset{dataset_id}_MSLesSeg"
-    nnUNet_datapath = f"{cwd}/nnUNet_raw/{dataset_name}"
-    raw_data = f"{cwd}/nnUNet_raw"
-    process_data = f"{cwd}/nnUNet_preprocessed"
-    train_results = f"{cwd}/nnUNet_results"
+    nnUNet_datapath = f"{nnunet_cwd}/nnUNet_raw/{dataset_name}"
+    raw_data = f"{nnunet_cwd}/nnUNet_raw"
+    process_data = f"{nnunet_cwd}/nnUNet_preprocessed"
+    train_results = f"{nnunet_cwd}/nnUNet_results"
     test_results = f"{nnUNet_datapath}/nnUNet_tests_{fold.value}"
 
     logger.info(f"Downloading MSLesSeg-Dataset for nnUNet pipeline {dataset_id}...")
@@ -272,6 +273,5 @@ if __name__ == "__main__":
     dataset_id = "024"
     configuration = Configuration.FULL_3D
     fold = Fold.FOLD_1
-    trainer = Trainer.EPOCHS_5
-    
+    trainer = Trainer.EPOCHS_100
     nnUNet_init(dataset_id, configuration, fold, trainer)
