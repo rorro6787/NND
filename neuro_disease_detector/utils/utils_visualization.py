@@ -1,39 +1,10 @@
+import os
+import numpy as np
+import nibabel as nib
 import matplotlib.pyplot as plt
 from vedo import Volume, show
-import nibabel as nib
-import numpy as np
-import os
 
 cwd = os.getcwd()
-
-timepoints_patient = [3,4,4,3,2,3,   
-                      2,2,3,2,2,4,2,  
-                      4,1,1,1,1,4,3,1,1,
-                      2,1,1,1,1,2,1,0,2,1,2,1,1,1,   
-                      1,1,1,1,1,1,1,2,2,2,2,1,1,     
-                      1,1,1,2]
-
-def _get_patient_by_test_id(test_id: int | str):
-    """ 
-    Given a test ID and a list with the number of tests per patient,
-    return the patient to which the test belongs.
-
-    Args:
-        test_id (int | str): The ID of the test.
-
-    Returns:
-        str: The patient to which the test belongs.
-    """
-
-    test_id = int(test_id)
-    current_id = 0
-
-    for i, num_tests in enumerate(timepoints_patient):
-        current_id += num_tests
-        if test_id <= current_id:
-            return f"P{i + 1}"
-        
-    return "ID not found"
 
 def show_volumes(vol: str, mask: str, prediction: str):
     """
@@ -46,6 +17,17 @@ def show_volumes(vol: str, mask: str, prediction: str):
     
     Returns:
         None
+
+    Example:
+        >>> from neuro_disease_detector.utils.utils_visualization import show_volumes
+        >>>
+        >>> # Define the paths to the volumes
+        >>> vol = vol_path
+        >>> mask = mask_path
+        >>> prediction = prediction_path
+        >>>
+        >>> # Show the volumes
+        >>> show_volumes(vol, mask, prediction)
     """
     
     vol = Volume(vol)
@@ -125,6 +107,17 @@ def display_slices(slice_type: str, slice_index: int, nifti_files: list):
     
     Returns:
         None
+
+    Example:
+        >>> from neuro_disease_detector.utils.utils_visualization display_slices
+        >>>
+        >>> # Define the slice type, index and NIFTI files
+        >>> slice_type = "Axial"
+        >>> slice_index = 100
+        >>> nifti_files = [flair, mask, prediction]
+        >>> 
+        >>> # Display the slices
+        >>> display_slices(slice_type, slice_index, nifti_files)
     """
 
     os.rename(f"{nifti_files[0]}.gz", nifti_files[0])

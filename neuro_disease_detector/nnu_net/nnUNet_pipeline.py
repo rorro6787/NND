@@ -1,5 +1,7 @@
 import subprocess, zipfile, shutil, gdown, os
 from neuro_disease_detector.nnu_net.__init__ import Configuration, Fold, Trainer
+from neuro_disease_detector.utils.utils_dataset import split_assign
+from neuro_disease_detector.utils.utils_dataset import download_dataset_from_cloud
 from neuro_disease_detector.logger import get_logger
 
 logger = get_logger(__name__)
@@ -46,13 +48,28 @@ def nnUNet_init(dataset_id: str, configuration: Configuration, fold: Fold, train
     train_results = f"{cwd}/nnUNet_results"
     test_results = f"{nnUNet_datapath}/nnUNet_tests_{fold.value}"
 
-    download_dataset_from_cloud(dataset_dir)
+    logger.info(f"Downloading MSLesSeg-Dataset for nnUNet pipeline {dataset_id}...")
+    url = "https://drive.google.com/uc?export=download&id=1A3ZpXHe-bLpaAI7BjPTSkZHyQwEP3pIi"
+    download_dataset_from_cloud(dataset_dir, url)
+
+    logger.info("Creating nnUNet dataset...")
     create_nnu_dataset(dataset_dir, nnUNet_datapath)
+
+    logger.info("Configuring nnUNet environment...")
     configure_environment(raw_data, process_data, train_results)  
+
+    logger.info("Processing dataset...")
     process_dataset(process_data, dataset_name, dataset_id)
+
+    logger.info(f"Training nnUNet model for fold{fold.value}...")
     train_nnUNet(dataset_id, configuration, fold, trainer)
+
+    logger.info("Performing inference on test data...")
     inference_test(nnUNet_datapath, test_results, dataset_id, configuration, trainer, fold)
+
+    logger.info("Evaluating test results...")
     evaluate_test_results(nnUNet_datapath, test_results)
+    logger.info("nnUNet pipeline completed.")
 
 def evaluate_test_results(nnUNet_datapath: str, test_results: str):
     """
@@ -196,28 +213,6 @@ def create_nnu_dataset(dataset_dir: str, nnUNet_datapath: str):
         None
     """
 
-    def _split_assign(pd: int):
-        """
-        Assign a patient to a fold based on the patient ID.
-
-        Args:
-            pd (int): The patient ID.
-
-        Returns:
-            str: The fold to which the patient belongs.
-        """
-
-        # Define the boundaries for each fold
-        folds = [1, 7, 14, 23, 37, 50]
-
-        # Assign the patient to a fold based on their ID
-        for i, start in enumerate(folds[:-1]):
-            # If the patient ID is within the range of the current fold, return the fold
-            if pd >= start and pd < folds[i + 1]:
-                return f"fold{i + 1}"
-        # If the patient ID is not within the range of any fold, return "test"
-        return "Test"
-
     if os.path.exists(nnUNet_datapath):
         return
     
@@ -262,7 +257,7 @@ def create_nnu_dataset(dataset_dir: str, nnUNet_datapath: str):
             mask_path = f"{td_path}/P{pd}_T{td}_MASK.nii"
 
             # Assign the patient to a fold based on their ID
-            train_test = "Ts" if _split_assign(pd) == "Test" else "Tr"  
+            train_test = "Ts" if split_assign(pd) == "Test" else "Tr"  
 
             # Copy the images and mask to the appropriate directories
             shutil.copy(flair_path, f"{nnUNet_datapath}/images{train_test}/BRATS_{id}_0000.nii.gz")
@@ -272,39 +267,6 @@ def create_nnu_dataset(dataset_dir: str, nnUNet_datapath: str):
 
     # Copy the dataset.json file to the nnUNet dataset directory
     shutil.copy(f"{cwd}/config/dataset.json", f"{nnUNet_datapath}/dataset.json")
-
-def download_dataset_from_cloud(folder_name: str) -> None:
-    """
-    Downloads and extracts a dataset from a cloud storage URL.
-    
-    Args:
-        folder_name (str): The folder where the dataset will be extracted.
-    
-    Returns:
-        None
-
-    Raises:
-        FileNotFoundError: If the downloaded file cannot be found.
-        zipfile.BadZipFile: If the ZIP file is invalid or corrupted.
-    """
-
-    if os.path.exists(folder_name):
-        return
-    
-    url = "https://drive.google.com/uc?export=download&id=1A3ZpXHe-bLpaAI7BjPTSkZHyQwEP3pIi"
-
-    # Name of the ZIP file to save locally
-    dataset_zip = f"{folder_name}.zip"
-
-    # Download the dataset from the cloud storage URL
-    gdown.download(url, dataset_zip, quiet=False)
-    
-    # Extract the dataset from the ZIP file
-    with zipfile.ZipFile(dataset_zip, "r") as zip_ref:
-        zip_ref.extractall(folder_name)
-
-    # Remove the ZIP file after extraction
-    os.remove(dataset_zip)
 
 if __name__ == "__main__":
     dataset_id = "024"

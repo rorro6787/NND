@@ -1,5 +1,5 @@
-from neuro_disease_detector.yolo.utils.utils_dataset import load_nifti_image_bgr
-from neuro_disease_detector.yolo.utils.utils_dataset import load_nifti_image
+from neuro_disease_detector.yolo.utils.utils_nifti import load_nifti_image_bgr
+from neuro_disease_detector.yolo.utils.utils_nifti import load_nifti_image
 from neuro_disease_detector.yolo.neuro_training.cross_validation import stack_masks
 from ultralytics import YOLO
 import numpy as np
@@ -75,7 +75,7 @@ def test_neuro_system(dataset_path: str, yolo_model_path: str) -> dict:
     return confusion_matrix
     
 
-def prepare_info
+
 def consensus(volume: np.ndarray, yolo_model: YOLO) -> None: 
     # volume = load_nifti_image_bgr(file_path)
     tam_x, tam_y, tam_z, _ = volume.shape
