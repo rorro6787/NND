@@ -3,12 +3,13 @@ src/images/predict*
 src/backend/images
 .ruff_cache
 passwords.txt
-
+YOLO/
 CSVs/
 outputs/
 nnUNet_raw/
 nnUNet_preprocessed/
 nnUNet_results/
+yolo_trainings/
 
 pruebas_3D/
 nnUNet/

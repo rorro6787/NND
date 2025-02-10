@@ -1,4 +1,4 @@
-import subprocess, zipfile, shutil, gdown, os
+import subprocess, shutil, os
 from neuro_disease_detector.nnu_net.__init__ import Configuration, Fold, Trainer
 from neuro_disease_detector.utils.utils_dataset import split_assign
 from neuro_disease_detector.utils.utils_dataset import download_dataset_from_cloud
@@ -112,7 +112,6 @@ def inference_test(nnUNet_datapath: str, test_results: str, dataset_id: str,
 
     Returns:
         None
-
     """
 
     # Create the necessary directories for the output predictions
