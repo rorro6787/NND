@@ -6,7 +6,7 @@ from vedo import Volume, show
 
 cwd = os.getcwd()
 
-def show_volumes(vol: str, mask: str, prediction: str):
+def show_volumes(vol: str, mask: str, prediction: str) -> None:
     """
     Show the volumes in a 3D plot
 
@@ -36,7 +36,7 @@ def show_volumes(vol: str, mask: str, prediction: str):
 
     show(vol, mask, prediction, axes=1)
 
-def _display_slices(slices: list):
+def _display_slices(slices: list) -> None:
     """
     Function to plot a slice of an MRI image
 
@@ -97,7 +97,7 @@ def _display_slices(slices: list):
     plt.tight_layout()
     plt.show()
 
-def display_slices(slice_type: str, slice_index: int, nifti_files: list):
+def display_slices(slice_type: str, slice_index: int, nifti_files: list) -> None:
     """
     Function to display a slice of an MRI image
 
@@ -142,10 +142,3 @@ def display_slices(slice_type: str, slice_index: int, nifti_files: list):
 
     # Plot the slices
     _display_slices(slices)
-
-if __name__ == "__main__":
-    nnUNet_raw = f"{cwd}/nnUNet_raw/Dataset024_MSLesSeg"
-    nnUNet_prediction = f"{nnUNet_raw}/nnUNet_tests_0/BRATS_89.nii.gz"
-    mask = f"{nnUNet_raw}/labelsTs/BRATS_89.nii.gz"
-    flair = f"{nnUNet_raw}/imagesTs/BRATS_89_0000.nii.gz"
-    show_volumes(flair, mask, nnUNet_prediction)

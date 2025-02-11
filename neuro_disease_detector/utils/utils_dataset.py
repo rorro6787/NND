@@ -6,15 +6,15 @@ fold_to_patient = { "fold1": (1, 7), "fold2": (7, 14), "fold3": (14, 23), "fold4
 timepoints_patient = [3,4,4,3,2,3,2,2,3,2,2,4,2,4,1,1,1,1,4,3,1,1,2,1,1,1,1,2,1,0,2,1,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,1,1,1,1,1,2]
 cwd = os.getcwd()
 
-def get_timepoints_patient(pd: int):
+def get_timepoints_patient(pd: int) -> int:
     """Returns the timepoints for a given patient, adjusted by -1."""
     return timepoints_patient[pd-1]
 
-def get_patients_split(split: str):
+def get_patients_split(split: str) -> tuple:
     """Returns the list of patients for a given split (e.g., train, test)."""
     return fold_to_patient[split]
 
-def split_assign(pd: int):
+def split_assign(pd: int) -> str:
         """
         Assign a patient to a fold based on the patient ID.
 
@@ -44,7 +44,7 @@ def split_assign(pd: int):
         # If the patient ID is not within the range of any fold, return "test"
         return "Test"
 
-def patients_timepoints(dataset_dir: str):
+def patients_timepoints(dataset_dir: str) -> dict:
     """
     Get the count of timepoints for each patient in the dataset.
 
@@ -96,7 +96,7 @@ def patients_timepoints(dataset_dir: str):
     # Return the dictionary containing the count of timepoints for each patient.
     return timepoints
 
-def get_patient_by_test_id(test_id: int | str):
+def get_patient_by_test_id(test_id: int | str) -> str:
     """ 
     Given a test ID and a list with the number of tests per patient,
     return the patient to which the test belongs.

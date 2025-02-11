@@ -8,7 +8,7 @@ from neuro_disease_detector.logger import get_logger
 logger = get_logger(__name__)
 cwd = os.getcwd()
 
-def nnUNet_init(dataset_id: str, configuration: Configuration, fold: Fold, trainer: Trainer):
+def nnUNet_init(dataset_id: str, configuration: Configuration, fold: Fold, trainer: Trainer) -> None:
     """
     Initialize the nnUNet model using the specified dataset and configuration.
 
@@ -73,7 +73,7 @@ def nnUNet_init(dataset_id: str, configuration: Configuration, fold: Fold, train
     evaluate_test_results(nnUNet_datapath, test_results)
     logger.info("nnUNet pipeline completed.")
 
-def evaluate_test_results(nnUNet_datapath: str, test_results: str):
+def evaluate_test_results(nnUNet_datapath: str, test_results: str) -> None:
     """
     Evaluate the test results using the trained nnUNet model.
 
@@ -99,7 +99,7 @@ def evaluate_test_results(nnUNet_datapath: str, test_results: str):
 def inference_test(nnUNet_datapath: str, test_results: str, dataset_id: str, 
                    configuration: Configuration = Configuration.FULL_3D, 
                    trainer: Trainer = Trainer.EPOCHS_20,
-                   fold: Fold = Fold.FOLD_1):
+                   fold: Fold = Fold.FOLD_1) -> None:
     """
     Perform inference on the test data using the trained nnUNet model.
 
@@ -133,7 +133,7 @@ def inference_test(nnUNet_datapath: str, test_results: str, dataset_id: str,
 def train_nnUNet(dataset_id: str, 
                  configuration: Configuration = Configuration.FULL_3D, 
                  fold: Fold = Fold.FOLD_1, 
-                 trainer: Trainer = Trainer.EPOCHS_20):
+                 trainer: Trainer = Trainer.EPOCHS_20) -> None:
     """
     Train the nnUNet model using the specified configuration, fold, and trainer.
 
@@ -156,7 +156,7 @@ def train_nnUNet(dataset_id: str,
     
     subprocess.run(command, env=os.environ, check=True)
     
-def process_dataset(process_data: str, dataset_name: str, dataset_id: str):
+def process_dataset(process_data: str, dataset_name: str, dataset_id: str) -> None:
     """
     Process the dataset using nnUNet.
 
@@ -179,7 +179,7 @@ def process_dataset(process_data: str, dataset_name: str, dataset_id: str):
     # Copy the splits_final.json file to the appropriate directory
     shutil.copy(f"{cwd}/config/splits_final.json", f"{process_data}/{dataset_name}/splits_final.json")
 
-def configure_environment(raw_data: str, process_data: str, results: str):
+def configure_environment(raw_data: str, process_data: str, results: str) -> None:
     """
     Configure the environment variables for nnUNet.
 
@@ -202,7 +202,7 @@ def configure_environment(raw_data: str, process_data: str, results: str):
     os.environ["nnUNet_preprocessed"] = process_data
     os.environ["nnUNet_results"] = results
 
-def create_nnu_dataset(dataset_dir: str, nnUNet_datapath: str):
+def create_nnu_dataset(dataset_dir: str, nnUNet_datapath: str) -> None:
     """
     Create the nnUNet dataset from the MSLesSeg-Dataset.
 

@@ -14,7 +14,7 @@ from neuro_disease_detector.logger import get_logger
 logger = get_logger(__name__)
 
 class YoloFoldValidator:
-    def __init__(self, folds_directory: str, data_folder: str, consensus_threshold: int=2):
+    def __init__(self, folds_directory: str, data_folder: str, consensus_threshold: int=2) -> None:
         self.folds_dir = folds_directory
         self.data_folder = data_folder
         self.cth = consensus_threshold
@@ -23,7 +23,7 @@ class YoloFoldValidator:
         self.cm_fold_epoch = {}
         self.metrics_fold_epoch = {}
 
-    def validate_all_folds(self):
+    def validate_all_folds(self) -> None:
         """Validates the model's performance for all folds and stores confusion matrices and metrics for each fold."""
 
         # Iterate over all folds (from fold1 to foldk).
@@ -38,7 +38,7 @@ class YoloFoldValidator:
             self.cm_fold_epoch[fold] = cm_epoch
             self.metrics_fold_epoch[fold] = metrics_epoch
 
-    def validate_fold(self, fold: str):
+    def validate_fold(self, fold: str) -> tuple:
         """Validates the model's performance for each epoch in the specified fold by processing all patients and storing confusion matrices and metrics."""
 
         # Construct the path to the current fold directory.
@@ -75,7 +75,7 @@ class YoloFoldValidator:
         return cm_epoch, metrics_epoch
         
 class YoloValidator:
-    def __init__(self, model_path: str, data_folder: str, consensus_threshold: int):
+    def __init__(self, model_path: str, data_folder: str, consensus_threshold: int) -> None:
         self.model = YOLO(model_path, task="segmentation", verbose=False)
         self.data_path = f"{data_folder}/MSLesSeg-Dataset/Train"
         self.test_patients = get_patients_split["Test"]
@@ -84,7 +84,7 @@ class YoloValidator:
         self.metrics = None
         self.cth = consensus_threshold
 
-    def process_all_patients(self):
+    def process_all_patients(self) -> None:
         """Processes all patients by iterating over each patient and calling _process_patient."""
 
         # Iterate over all patients specified by test_patients and process it.
@@ -94,7 +94,7 @@ class YoloValidator:
         # After processing all patients, compute the evaluation metrics.
         self.compute_metrics()
 
-    def _process_patient(self, pd: int):
+    def _process_patient(self, pd: int) -> None:
         """Processes a specific patient by loading scan data and running predictions for each timepoint."""
 
         # Get the number of timepoints available for this patient.
@@ -126,11 +126,11 @@ class YoloValidator:
                 # Update the confusion matrix with the final consensus votes and the ground truth mask
                 self.update_cm(votes_consensus, mask)
             
-    def apply_consensus(self, votes: np.ndarray):
+    def apply_consensus(self, votes: np.ndarray) -> np.ndarray:
         """Applies consensus threshold to the votes array and returns a binary result."""
         return np.where(votes >= self.cth, 1.0, 0.0)
     
-    def compute_metrics(self) -> float:
+    def compute_metrics(self) -> None:
         """Computes various performance metrics (Recall, Precision, Accuracy, Sensibility, IoU, DSC, F1) from the confusion matrix."""
 
         # Compute recall: higher is better
@@ -165,7 +165,7 @@ class YoloValidator:
             Metrics.F1 : np.nan_to_num(f1_score, nan=0)
         }
 
-    def update_cm(self, prediction: np.ndarray, mask: np.ndarray) -> dict:
+    def update_cm(self, prediction: np.ndarray, mask: np.ndarray) -> None:
         """Update the confusion matrix based on the votes and the ground truth mask."""
 
         # Computation of TP, TN, FN, FP

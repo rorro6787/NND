@@ -10,7 +10,7 @@ from neuro_disease_detector.logger import get_logger
 logger = get_logger(__name__)
 cwd = os.getcwd()
 
-def yolo_init(yolo_model: YoloModel, consensus_threshold: int=2):
+def yolo_init(yolo_model: YoloModel, consensus_threshold: int=2) -> None:
     """
     Initialize the YOLO dataset processing pipeline.
 
@@ -53,5 +53,3 @@ def yolo_init(yolo_model: YoloModel, consensus_threshold: int=2):
     """
     logger.info("yolo pipeline completed.")
 
-if __name__ == "__main__":
-    yolo_init(YoloModel.V8N_SEG, 2)
