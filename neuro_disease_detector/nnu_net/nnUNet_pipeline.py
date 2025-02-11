@@ -48,7 +48,7 @@ def nnUNet_init(dataset_id: str, configuration: Configuration, fold: Fold, train
     raw_data = f"{nnunet_cwd}/nnUNet_raw"
     process_data = f"{nnunet_cwd}/nnUNet_preprocessed"
     train_results = f"{nnunet_cwd}/nnUNet_results"
-    test_results = f"{nnUNet_datapath}/nnUNet_tests_{fold.value}"
+    test_results = f"{train_results}/Dataset{dataset_id}_MSLesSeg/{trainer}__nnUNetPlans__{Configuration}/fold{fold.value}/test"
 
     logger.info(f"Downloading MSLesSeg-Dataset for nnUNet pipeline {dataset_id}...")
     url = "https://drive.google.com/uc?export=download&id=1A3ZpXHe-bLpaAI7BjPTSkZHyQwEP3pIi"
@@ -266,7 +266,7 @@ def create_nnu_dataset(dataset_dir: str, nnUNet_datapath: str):
 
 if __name__ == "__main__":
     dataset_id = "024"
-    configuration = Configuration.FULL_3D
+    configuration = Configuration.SIMPLE_2D
     fold = Fold.FOLD_1
     trainer = Trainer.EPOCHS_100
     nnUNet_init(dataset_id, configuration, fold, trainer)

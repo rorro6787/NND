@@ -8,7 +8,7 @@ cwd = os.getcwd()
 
 def get_timepoints_patient(pd: int):
     """Returns the timepoints for a given patient, adjusted by -1."""
-    return timepoints_patient(pd-1)
+    return timepoints_patient[pd-1]
 
 def get_patients_split(split: str):
     """Returns the list of patients for a given split (e.g., train, test)."""
