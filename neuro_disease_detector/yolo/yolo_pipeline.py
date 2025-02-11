@@ -1,20 +1,22 @@
-import matplotlib.pyplot as plt
-import numpy as np
 import os 
 
-from neuro_disease_detector.yolo.utils.utils_nifti import extract_contours_mask, load_nifti_image
-from neuro_disease_detector.utils.utils_dataset import download_dataset_from_cloud, split_assign
+from neuro_disease_detector.utils.utils_dataset import download_dataset_from_cloud
+from neuro_disease_detector.yolo.validation_consensus import YoloFoldValidator
+from neuro_disease_detector.yolo.process_dataset import process_dataset
+from neuro_disease_detector.yolo.train_augm import train_yolo_folds
+from neuro_disease_detector.yolo.__init__ import YoloModel
 from neuro_disease_detector.logger import get_logger
 
 logger = get_logger(__name__)
 cwd = os.getcwd()
 
-def yolo_init():
+def yolo_init(yolo_model: YoloModel, consensus_threshold: int=2):
     """
     Initialize the YOLO dataset processing pipeline.
 
     Args:
-        None
+        yolo_model (YoloModel): The YOLO model to be used for the detection task.
+        consensus_threshold (int): Consensus value for prediction voting. Goes from 1 to 3
 
     Returns:
         None
@@ -37,168 +39,19 @@ def yolo_init():
     # process_dataset(dataset_dir, yolo_dataset)
     url_yolo = "https://drive.google.com/uc?export=download&id=1_uq4c2xmZyOpWX9tTrN6fRrB5MElf-q2"
     download_dataset_from_cloud(yolo_dataset, url_yolo, extract_folder=False)
-    logger.info("YOLO dataset processing finished.")
-
-def process_dataset(dataset_dir: str, yolo_dataset: str) -> None:
-    """
-    Process the dataset to create the YOLO dataset
-
-    Args:
-        dataset_dir (str): The path to the dataset directory
-        yolo_dataset (str): The path to the YOLO dataset
-
-    Returns:
-        None    
-    """
-
-    if os.path.exists(yolo_dataset):
-        return
     
-    # Define the path where the nnUNet dataset will be stored
-    dataset_path = f"{dataset_dir}/train"
-    
-    # Create necessary directories for the nnUNet dataset
-    _create_yolo_dataset(yolo_dataset) 
+    logger.info(f"Training yolo model for...")
+    train_path = train_yolo_folds(yolo_model, yolo_dataset)
 
-    # Iterate over the subjects in the dataset
-    for pd in range(1, 54):
-        # Skip the subject with id 30
-        if pd == 30:
-            continue
-
-        # Define the path for a specific subject's folder
-        pd_path = f"{dataset_path}/P{pd}"
-
-        # Iterate over the 4 timepoints for each subject
-        for td in range(1, 5):
-            # Define the path for the timepoint folder
-            td_path = f"{pd_path}/T{td}"
-
-            # Break the loop if the timepoint folder doesn't exist
-            if not os.path.exists(td_path):
-                break
-            
-            # Split the dataset
-            fold_assign = split_assign(pd)
-
-            # Load the NIFTI files for the current patient and timepoint
-            mask = load_nifti_image(f"{td_path}/P{pd}_T{td}_MASK.nii")
-            flair = load_nifti_image(f"{td_path}/P{pd}_T{td}_FLAIR.nii")
-            t1 = load_nifti_image(f"{td_path}/P{pd}_T{td}_T1.nii")
-            t2 = load_nifti_image(f"{td_path}/P{pd}_T{td}_T2.nii")
-
-            data = [flair, t1, t2]
-
-            # Make and save the slices
-            _make_save_slices(data, mask, yolo_dataset, fold_assign, pd, td)
-
-def _create_yolo_dataset(yolo_dataset: str) -> None:
+    logger.info("Evaluating test results...")
+    yolo_fold_validator = YoloFoldValidator(train_path, cwd, consensus_threshold=consensus_threshold)
+    yolo_fold_validator.validate_all_folds()
     """
-    Create the necessary directories for the YOLO dataset
-
-    Args:
-        yolo_dataset (str): The path to the YOLO dataset
-
-    Returns:
-        None
+    cm_fold_epoch = yolo_fold_validator.cm_fold_epoch
+    metrics_fold_epoch = yolo_fold_validator.metrics_fold_epoch
+    print(cm_fold_epoch, metrics_fold_epoch)
     """
-
-    # Create the necessary directories for the YOLO dataset
-    for i in range(1, 6):
-        os.makedirs(f"{yolo_dataset}/fold{i}/images", exist_ok=True)
-        os.makedirs(f"{yolo_dataset}/fold{i}/labels", exist_ok=True)
-
-    os.makedirs(f"{yolo_dataset}/Test/images", exist_ok=True)
-    os.makedirs(f"{yolo_dataset}/Test/labels", exist_ok=True)
-
-def _make_save_slices(data: list, mask: np.ndarray, yolo_dataset: str, fold_assign: str, pd: int, td: int) -> None:
-    """
-    Function to create and save the slices of the MRI images and masks
-
-    Args:
-        data (list): List of MRI images (FLAIR, T1, T2)
-        mask (np.ndarray): The mask of the MRI image
-        yolo_dataset (str): The path to the YOLO dataset
-        fold_assign (str): The fold assignment for the current patient
-        pd (int): The patient ID
-        td (int): The timepoint ID
-
-    Returns:
-        None
-    """
-
-    # Iterate over all sagittal slices in the 3D mask array
-    for i in range(mask.shape[0]):
-        # Extract the sagittal slice of the mask and extract the contours
-        sag_mask = mask[i, :, :]
-        sag_mask_ann = extract_contours_mask(sag_mask)
-
-        # Extract corresponding sagittal slices from the FLAIR, T1, and T2 data arrays
-        sag_flair = data[0][i, :, :]
-        sag_t1 = data[1][i, :, :]
-        sag_t2 = data[2][i, :, :]
-        sag_mask_ann = extract_contours_mask(sag_mask)
-
-        # Save the image slices as PNG files in the corresponding directory 
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_FLAIR_sagittal_{i}.png", sag_flair, cmap="gray")
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_T1_sagittal_{i}.png", sag_t1, cmap="gray")
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_T2_sagittal_{i}.png", sag_t2, cmap="gray")
-
-        # Save the coordinates to the text files
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_FLAIR_sagittal_{i}.txt", 'w') as f:
-            f.write(sag_mask_ann)
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_T1_sagittal_{i}.txt", 'w') as f:
-            f.write(sag_mask_ann)
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_T2_sagittal_{i}.txt", 'w') as f:
-            f.write(sag_mask_ann)
-
-    # Iterate over all coronal slices in the 3D mask array
-    for j in range(mask.shape[1]):
-        # Extract the coronal slice of the mask and extract the contours
-        cor_mask = mask[:, j, :]
-        cor_mask_ann = extract_contours_mask(cor_mask)
-
-        # Extract corresponding coronal slices from the FLAIR, T1, and T2 data arrays
-        cor_flair = data[0][:, j, :]
-        cor_t1 = data[1][:, j, :]
-        cor_t2 = data[2][:, j, :]
-    
-        # Save the image slices as PNG files in the corresponding directory
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_FLAIR_coronal_{j}.png", cor_flair, cmap="gray")
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_T1_coronal_{j}.png", cor_t1, cmap="gray")
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_T2_coronal_{j}.png", cor_t2, cmap="gray")
-
-        # Save the coordinates to the text files
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_FLAIR_coronal_{j}.txt", 'w') as f:
-            f.write(cor_mask_ann)
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_T1_coronal_{j}.txt", 'w') as f:
-            f.write(cor_mask_ann)
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_T2_coronal_{j}.txt", 'w') as f:
-            f.write(cor_mask_ann)
-
-    # Iterate over all axial slices in the 3D mask array
-    for k in range(mask.shape[2]):
-        # Extract the axial slice of the mask and extract the contours
-        axi_mask = mask[:, :, k]
-        axi_mask_ann = extract_contours_mask(axi_mask)
-
-        # Extract corresponding axial slices from the FLAIR, T1, and T2 data arrays
-        axi_flair = data[0][:, :, k]
-        axi_t1 = data[1][:, :, k]
-        axi_t2 = data[2][:, :, k]
-        
-        # Save the image slices as PNG files in the corresponding directory
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_FLAIR_axial_{k}.png", axi_flair, cmap="gray")
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_T1_axial_{k}.png", axi_t1, cmap="gray")
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_T2_axial_{k}.png", axi_t2, cmap="gray")
-
-        # Save the coordinates to the text files
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_FLAIR_axial_{k}.txt", 'w') as f:
-            f.write(axi_mask_ann)
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_T1_axial_{k}.txt", 'w') as f:
-            f.write(axi_mask_ann)
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_T2_axial_{k}.txt", 'w') as f:
-            f.write(axi_mask_ann)
+    logger.info("yolo pipeline completed.")
 
 if __name__ == "__main__":
-    yolo_init()
+    yolo_init(YoloModel.V8N_SEG, 2)

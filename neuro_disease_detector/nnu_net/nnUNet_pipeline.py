@@ -2,6 +2,7 @@ import subprocess, shutil, os
 from neuro_disease_detector.nnu_net.__init__ import Configuration, Fold, Trainer
 from neuro_disease_detector.utils.utils_dataset import split_assign
 from neuro_disease_detector.utils.utils_dataset import download_dataset_from_cloud
+from neuro_disease_detector.utils.utils_dataset import get_timepoints_patient
 from neuro_disease_detector.logger import get_logger
 
 logger = get_logger(__name__)
@@ -235,21 +236,16 @@ def create_nnu_dataset(dataset_dir: str, nnUNet_datapath: str):
         if pd == 30:
             continue
 
-        # Define the path for a specific subject's folder
+        # Get the number of timepoints available for this patient.
+        num_tp = get_timepoints_patient(pd)
         pd_path = f"{dataset_path}/P{pd}"
 
-        # Iterate over the 4 timepoints for each subject
-        for td in range(1, 5):
+        # Iterate over each timepoint for the current patient.
+        for td in range(1, num_tp+1):
             # Define the path for the timepoint folder
             td_path = f"{pd_path}/T{td}"
-
-            # Break the loop if the timepoint folder doesn't exist
-            if not os.path.exists(td_path):
-                break
-
-            # Increment the dataset ID for each subject/timepoint pair
             id += 1
-
+            
             # Define the paths to the image and mask files
             flair_path = f"{td_path}/P{pd}_T{td}_FLAIR.nii"
             t1_path = f"{td_path}/P{pd}_T{td}_T1.nii"

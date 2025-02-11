@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import csv
-import os
 from pathlib import Path
 
 def update_confusion_matrix(metrics: dict, real_mask: np.ndarray, predicted_mask: np.ndarray) -> dict:
@@ -77,41 +76,6 @@ def calculate_metrics(metrics: dict) -> dict:
     }
 
 def write_csv(metrics: dict, output_path: str) -> None:
-    """
-    Writes performance metrics to a CSV file.
-
-    Parameters:
-    metrics (dict): A dictionary containing performance metrics. 
-                    Each item in the dictionary is expected to be a tuple where:
-                    - The first element is a dictionary with true positive (TP), 
-                      false positive (FP), true negative (TN), false negative (FN), 
-                      recall, precision, accuracy (Acc), sensibility, intersection over union (IOU), 
-                      and F1 score.
-                    - The second element is also a dictionary with similar metrics.
-
-    path (str): The directory path where the output CSV file will be saved.
-
-    Returns:
-    None: This function does not return any value. It writes the output directly to a CSV file.
-
-    CSV Format:
-    The first row of the CSV file contains the headers:
-    ['TP', 'FP', 'TN', 'FN', 'Recall', 'Precision', 'Acc', 'Sensibility', 'IOU', 'F1 Score']
-
-    Each subsequent row contains the metrics for a specific item from the input dictionary,
-    combining values from both dictionaries in the tuple.
-
-    Note:
-    The output CSV file is named 'output.csv' and is created in the specified directory path.
-    
-    Example:
-    metrics = {
-        ({"TP": 10, "FP": 2, "TN": 15, "FN": 1, "Recall": 0.91, "Precision": 0.83, "Acc": 0.92, "Sensibility": 0.89, "IOU": 0.75, "F1 Score": 0.87},
-         {"TP": 8, "FP": 3, "TN": 12, "FN": 2, "Recall": 0.80, "Precision": 0.73, "Acc": 0.85, "Sensibility": 0.78, "IOU": 0.70, "F1 Score": 0.76}),
-        # more items...
-    }
-    write_csv(metrics, '/path/to/directory')
-    """
 
     # Extract dictionary keys to use as the header row for the CSV
     header = list(metrics[0].keys())
@@ -131,17 +95,6 @@ def write_csv(metrics: dict, output_path: str) -> None:
     return Path(output_path) / "metrics.csv"
 
 def create_metrics_graphs(csv_path: str, output_path: str) -> None:
-    """
-    Generates line graphs for metrics stored in a CSV file, saving the output as a PNG image.
-
-    Parameters:
-    - csv_path (str): The path to the CSV file containing metric data. Each column should represent a metric.
-    - test (bool): If True, the generated graphs will be labeled as 'Test'; otherwise, they will be labeled as 'Validation'.
-    
-    Output:
-    - Saves a PNG file containing the graphs in the same directory as the input CSV file. 
-      The file is named 'test.png' if test=True, otherwise 'val.png'.
-    """
 
     # Read the CSV file into a DataFrame
     df = pd.read_csv(csv_path)
@@ -161,3 +114,28 @@ def create_metrics_graphs(csv_path: str, output_path: str) -> None:
     plt.tight_layout()
     plt.savefig(Path(output_path) / "metrics.png")  
     plt.close() 
+
+
+def yolo_3d_voting_planes(volume: np.ndarray, predictions_xyz: tuple) -> tuple: 
+    tam_x, tam_y, tam_z, _ = volume.shape
+    votes_saggital, votes_coronal, votes_axial = (np.zeros((tam_x, tam_y, tam_z)) for _ in range(3))
+
+    predictions_x, predictions_y, predictions_z = predictions_xyz
+
+    
+    for index, prediction_x in enumerate(predictions_x):
+        masks = prediction_x.masks
+        stack = stack_masks(masks, votes_saggital[index,:,:].shape)
+        votes_saggital[index,:,:] = votes_saggital[index,:,:] + stack
+
+    for index, prediction_y in enumerate(predictions_y):
+        masks = prediction_y.masks
+        stack = stack_masks(masks, votes_saggital[:,index,:].shape)
+        votes_coronal[:,index,:] = votes_coronal[:,index,:] + stack
+    
+    for index, prediction_z in enumerate(predictions_z):
+        masks = prediction_z.masks
+        stack = stack_masks(masks, votes_saggital[:,:,index].shape)
+        votes_axial[:,:,index] = votes_axial[:,:,index] + stack
+    
+    return votes_saggital, votes_coronal, votes_axial

@@ -155,7 +155,7 @@ def train_yolo_folds(yolo_model: YoloModel, dataset_path: str) -> None:
         dataset_path (str): The path to the dataset directory.
 
     Returns:
-        None
+        train_path (str): The path where the training results are stored.
 
     Example:
         >>> from neuro_disease_detector.yolo.train_augm import train_yolo_folds
@@ -185,8 +185,10 @@ def train_yolo_folds(yolo_model: YoloModel, dataset_path: str) -> None:
 
         # Define the model name for this fold and train the model
         fold = f"fold{index+1}"
-        logger.info(f"Training model {fold}")
+        logger.info(fold)
         train_yolo(yolo_model, yaml_file_path, train_path, fold)
+
+    return train_path
 
 def _generate_yaml_files(dataset_path: str) -> list:
     """Generate YAML configuration files for each fold in a 5-fold cross-validation setup."""
@@ -216,8 +218,4 @@ def _generate_yaml_files(dataset_path: str) -> list:
         fold_configs.append(data)
     
     return fold_configs
-
-if __name__ == "__main__":
-    train_yolo_folds(YoloModel.V8N_SEG, cwd)
-    
     

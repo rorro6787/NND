@@ -3,7 +3,16 @@ import zipfile
 import os
 
 fold_to_patient = { "fold1": (1, 7), "fold2": (7, 14), "fold3": (14, 23), "fold4": (23, 37), "fold5": (37, 50), "test": (50, 54) }
+timepoints_patient = [3,4,4,3,2,3,2,2,3,2,2,4,2,4,1,1,1,1,4,3,1,1,2,1,1,1,1,2,1,0,2,1,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,1,1,1,1,1,2]
 cwd = os.getcwd()
+
+def get_timepoints_patient(pd: int):
+    """Returns the timepoints for a given patient, adjusted by -1."""
+    return timepoints_patient(pd-1)
+
+def get_patients_split(split: str):
+    """Returns the list of patients for a given split (e.g., train, test)."""
+    return fold_to_patient[split]
 
 def split_assign(pd: int):
         """

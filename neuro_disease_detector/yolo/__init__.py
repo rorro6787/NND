@@ -11,4 +11,19 @@ class YoloModel(Enum):
     V11M_SEG = "yolo11m-seg.pt"
     V11L_SEG = "yolo11l-seg.pt"
     V11X_SEG = "yolo11x-seg.pt"
+
+class Metrics(Enum):
+    RECALL = "Recall"
+    PRECISION = "Precision"
+    ACCUARICY = "Acc"
+    SENSIBILITY = "Sensibility"
+    IOU = "IOU"
+    F1 = "F1 Score"
+    DSC = "DSC"
+
+class CM(Enum):
+    TP = "TP"
+    TN = "TN"
+    FP = "FP"
+    FN = "FN"
     
