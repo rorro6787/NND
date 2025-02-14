@@ -48,7 +48,9 @@ def nnUNet_init(dataset_id: str, configuration: Configuration, fold: Fold, train
     raw_data = f"{nnunet_cwd}/nnUNet_raw"
     process_data = f"{nnunet_cwd}/nnUNet_preprocessed"
     train_results = f"{nnunet_cwd}/nnUNet_results"
-    test_results = f"{train_results}/Dataset{dataset_id}_MSLesSeg/{trainer}__nnUNetPlans__{Configuration}/fold{fold.value}/test"
+    results = f"{train_results}/Dataset{dataset_id}_MSLesSeg/{trainer.value}__nnUNetPlans__{configuration.value}/fold_{fold.value}"
+    test_results = f"{results}/test"
+    val_results = f"{results}/validation"
 
     logger.info(f"Downloading MSLesSeg-Dataset for nnUNet pipeline {dataset_id}...")
     url = "https://drive.google.com/uc?export=download&id=1A3ZpXHe-bLpaAI7BjPTSkZHyQwEP3pIi"
@@ -56,22 +58,36 @@ def nnUNet_init(dataset_id: str, configuration: Configuration, fold: Fold, train
 
     logger.info("Creating nnUNet dataset...")
     create_nnu_dataset(dataset_dir, nnUNet_datapath)
+    remove_folder(f"{dataset_dir}/train")
 
     logger.info("Configuring nnUNet environment...")
     configure_environment(raw_data, process_data, train_results)  
 
     logger.info("Processing dataset...")
     process_dataset(process_data, dataset_name, dataset_id)
+    remove_files(f"{nnUNet_datapath}/imagesTr")
+    remove_files(f"{nnUNet_datapath}/labelsTr")
 
     logger.info(f"Training nnUNet model for fold{fold.value}...")
-    train_nnUNet(dataset_id, configuration, fold, trainer)
+    #train_nnUNet(dataset_id, configuration, fold, trainer)
+    remove_files(val_results)
 
     logger.info("Performing inference on test data...")
     inference_test(nnUNet_datapath, test_results, dataset_id, configuration, trainer, fold)
 
     logger.info("Evaluating test results...")
     evaluate_test_results(nnUNet_datapath, test_results)
+    remove_files(test_results)
     logger.info("nnUNet pipeline completed.")
+
+def remove_files(folder_path: str):
+    for file in os.listdir(folder_path):
+        if file.startswith("BRATS_"):
+            os.remove(f"{folder_path}/{file}")
+
+def remove_folder(folder_path):
+    if os.path.exists(folder_path):
+        shutil.rmtree(folder_path)
 
 def evaluate_test_results(nnUNet_datapath: str, test_results: str) -> None:
     """
@@ -267,6 +283,6 @@ def create_nnu_dataset(dataset_dir: str, nnUNet_datapath: str) -> None:
 if __name__ == "__main__":
     dataset_id = "024"
     configuration = Configuration.SIMPLE_2D
-    fold = Fold.FOLD_1
+    fold = Fold.FOLD_5
     trainer = Trainer.EPOCHS_100
     nnUNet_init(dataset_id, configuration, fold, trainer)
