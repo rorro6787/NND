@@ -29,13 +29,13 @@ def _train_parameters(**train_params) -> dict:
 
     # Define the training parameters for the YOLO model
     train_parameters = {
-        "epochs" : 1,                  # Number of training epochs
+        "epochs" : 100,                # Number of training epochs
         "imgsz" : 320,                 # Image size (width and height)
         "batch" : -1,                  # Batch size, -1 for default
         "device" : 0,                  # Device ID for training (0 for first GPU)
         "fraction" : 1,                # Fraction of dataset for training
         "plots" : True,                # Generate training plots
-        "save_period" : 3,             # Save model every 'n' epochs
+        "save_period" : 100,           # Save model every 'n' epochs
         "dropout" : 0.25,              # Dropout rate for regularization
         "patience" : 20,               # Early stopping patience (number of epochs)
         "resume" : False,              # Whether to resume training from the last checkpoint
@@ -146,11 +146,12 @@ def train_yolo(yolo_model: YoloModel, yaml_file_path: str, train_path: str, fold
         **params                    # Training parameters
     )
 
-def train_yolo_folds(yolo_model: YoloModel, dataset_path: str) -> None:
+def train_yolo_folds(id: str, yolo_model: YoloModel, dataset_path: str) -> str:
     """
     Trains the YOLO segmentation model using 5-fold cross-validation. This function iterates through 5 folds, generating a model name and corresponding YAML configuration file for each fold, then calls `train_neuro_system` to train the model.
 
     Args:
+        id (str): ID for the training fold
         yolo_model (YoloModel): The YOLO model to train.
         dataset_path (str): The path to the dataset directory.
 
@@ -170,7 +171,7 @@ def train_yolo_folds(yolo_model: YoloModel, dataset_path: str) -> None:
 
     # Define the model name for the YOLO model and create the YAML configuration files
     yolo_model_suffix = yolo_model.value.removesuffix(".pt")
-    train_path = f"{cwd}/yolo_trainings/{yolo_model_suffix}"
+    train_path = f"{cwd}/yolo_trainings/{id}/{yolo_model_suffix}"
     yaml_files = _generate_yaml_files(dataset_path)
     os.makedirs(train_path, exist_ok=True)
     os.makedirs(f"{train_path}/config", exist_ok=True)
@@ -198,7 +199,7 @@ def _generate_yaml_files(dataset_path: str) -> list:
     k = 5
     
     # Create a mapping for validation folds
-    val_mapping = {1: 5, 2: 4, 3: 3, 4: 2, 5: 1}
+    val_mapping = { 1:5, 2:4, 3:3, 4:2, 5:1 }
     
     # Iterate over each fold to create train, val splits
     for i in range(1, k + 1):

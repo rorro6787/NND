@@ -10,12 +10,13 @@ from neuro_disease_detector.logger import get_logger
 logger = get_logger(__name__)
 cwd = os.getcwd()
 
-def yolo_init(yolo_model: YoloModel, consensus_threshold: int=2) -> None:
+def yolo_init(yolo_model: YoloModel, id: str, consensus_threshold: int=2) -> None:
     """
     Initialize the YOLO dataset processing pipeline.
 
     Args:
         yolo_model (YoloModel): The YOLO model to be used for the detection task.
+        id (str): ID for the training fold
         consensus_threshold (int): Consensus value for prediction voting. Goes from 1 to 3
 
     Returns:
@@ -37,19 +38,27 @@ def yolo_init(yolo_model: YoloModel, consensus_threshold: int=2) -> None:
 
     logger.info("Creating and processing YOLO dataset...")
     # process_dataset(dataset_dir, yolo_dataset)
-    url_yolo = "https://drive.google.com/uc?export=download&id=1_uq4c2xmZyOpWX9tTrN6fRrB5MElf-q2"
+    url_yolo = "https://drive.google.com/uc?export=download&id=1g6g2Oe2kPYgt7pn-KSgv170aN4T8ZYbi"
     download_dataset_from_cloud(yolo_dataset, url_yolo, extract_folder=False)
     
     logger.info(f"Training yolo model for...")
-    train_path = train_yolo_folds(yolo_model, yolo_dataset)
+    train_path = train_yolo_folds(id, yolo_model, cwd)
 
+    """
     logger.info("Evaluating test results...")
     yolo_fold_validator = YoloFoldValidator(train_path, cwd, consensus_threshold=consensus_threshold)
     yolo_fold_validator.validate_all_folds()
-    """
+    
     cm_fold_epoch = yolo_fold_validator.cm_fold_epoch
     metrics_fold_epoch = yolo_fold_validator.metrics_fold_epoch
     print(cm_fold_epoch, metrics_fold_epoch)
     """
+    
     logger.info("yolo pipeline completed.")
+    
 
+if __name__ == "__main__":
+    yolo_model = YoloModel.V11M_SEG
+    consensus_threshold = 2
+    id = "024"
+    yolo_init(yolo_model, id, consensus_threshold=2)
