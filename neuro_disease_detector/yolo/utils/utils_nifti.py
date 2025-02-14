@@ -33,6 +33,31 @@ def load_nifti_image_bgr(file_path: str) -> np.ndarray:
     # Convert the volume to a BGR image
     return np.stack([volume_uint8]*3, axis=-1)
 
+import numpy as np
+import cv2
+
+def extract_contours_mask(mask: np.ndarray) -> str:
+    """Extracts contours from a binary mask image and returns annotations in YOLO segmentation format."""
+
+    # Convert mask to uint8 for proper contour extraction
+    mask = mask.astype(np.uint8)
+
+    # Find contours in the binary mask image
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Get the dimensions of the mask image
+    mask_height, mask_width = mask.shape
+    annotations = ""
+
+    # Iterate over each contour found in the mask
+    for contour in contours:
+        # Add the points of the contour (normalized)
+        for point in contour:
+            px, py = point[0]
+            annotations += f"0 {px/mask_width} {py/mask_height}"
+        annotations += "\n"
+    return annotations
+
 def extract_contours_mask(mask: np.ndarray) -> str:
     """Extracts contours from a binary mask image and returns annotations in YOLO format."""
 
@@ -73,3 +98,4 @@ def extract_contours_mask(mask: np.ndarray) -> str:
         annotations += "\n"
 
     return annotations
+
