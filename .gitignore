@@ -12,7 +12,7 @@ nnUNet_results/
 yolo_trainings/
 
 pruebas_3D/
-nnUNet/
+nnu_net/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

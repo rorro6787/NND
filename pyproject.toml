@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build]
-exclude = ["*.pyc", "*.log", ".git", "*Dataset", "*Dataset-a", "dist", "venv", "*__pycache__*", "*yolo*", "*runs", "*k_fold_configs", "*nnUNet_raw*", "*nnUNet_preprocessed*", "*nnUNet_results*", "*nnUNet*", "*YOLO*", "*yolo_trainings*"]
+exclude = ["*.pyc", "*.log", ".git", "*Dataset", "*Dataset-a", "dist", "venv", "*__pycache__*", "*yolo*", "*runs", "*k_fold_configs", "*nnUNet_raw*", "*nnUNet_preprocessed*", "*nnUNet_results*", "*nnu_net*", "*YOLO*", "*yolo_trainings*"]
 
 [project]
 name = "neuro-disease-detector"

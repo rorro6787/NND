@@ -1,6 +1,10 @@
-import gdown
+from neuro_disease_detector.logger import get_logger
+
 import zipfile
+import gdown
 import os
+
+logger = get_logger(__name__)
 
 fold_to_patient = { "fold1": (1, 7), "fold2": (7, 14), "fold3": (14, 23), "fold4": (23, 37), "fold5": (37, 50), "test": (50, 54) }
 timepoints_patient = [3,4,4,3,2,3,2,2,3,2,2,4,2,4,1,1,1,1,4,3,1,1,2,1,1,1,1,2,1,0,2,1,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,1,1,1,1,1,2]
@@ -147,6 +151,7 @@ def download_dataset_from_cloud(folder_name: str, url: str, extract_folder: bool
         zipfile.BadZipFile: If the ZIP file is invalid or corrupted.
     """
 
+    logger.info(f"Downloading MSLesSeg-Dataset for yolo/nnUNet pipeline...")
     if os.path.exists(folder_name):
         return
     

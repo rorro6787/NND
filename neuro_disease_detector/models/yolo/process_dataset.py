@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os 
 
-from neuro_disease_detector.yolo.utils.utils_nifti import extract_contours_mask, load_nifti_image
+from neuro_disease_detector.models.yolo.utils.utils_nifti import extract_contours_mask, load_nifti_image
 from neuro_disease_detector.utils.utils_dataset import get_timepoints_patient
 from neuro_disease_detector.utils.utils_dataset import split_assign
 

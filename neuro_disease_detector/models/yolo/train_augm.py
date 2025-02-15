@@ -2,7 +2,7 @@ from ultralytics import YOLO
 import yaml
 import os
 
-from neuro_disease_detector.yolo.__init__ import YoloModel
+from neuro_disease_detector.models.yolo.__init__ import YoloModel
 from neuro_disease_detector.logger import get_logger
 
 logger = get_logger(__name__)

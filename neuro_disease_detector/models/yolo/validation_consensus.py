@@ -6,9 +6,9 @@ import cv2
 import os
 import re
 
-from neuro_disease_detector.yolo.__init__ import CM, Metrics
+from neuro_disease_detector.models.yolo.__init__ import CM, Metrics
 from neuro_disease_detector.utils.utils_dataset import get_timepoints_patient, get_patients_split
-from neuro_disease_detector.yolo.utils.utils_nifti import load_nifti_image, load_nifti_image_bgr
+from neuro_disease_detector.models.yolo.utils.utils_nifti import load_nifti_image, load_nifti_image_bgr
 from neuro_disease_detector.logger import get_logger
 
 logger = get_logger(__name__)

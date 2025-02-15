@@ -1,8 +1,8 @@
-import os
-import numpy as np
-import nibabel as nib
 import matplotlib.pyplot as plt
 from vedo import Volume, show
+import nibabel as nib
+import numpy as np
+import os
 
 cwd = os.getcwd()
 

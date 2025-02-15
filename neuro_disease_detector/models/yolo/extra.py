@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import csv
 from pathlib import Path
-from neuro_disease_detector.yolo.validation_consensus import stack_masks
+from neuro_disease_detector.models.yolo.validation_consensus import stack_masks
 
 def write_csv(metrics: dict, output_path: str) -> None:
     header = list(metrics[0].keys())
