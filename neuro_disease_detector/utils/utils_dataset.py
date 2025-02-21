@@ -1,8 +1,11 @@
 from neuro_disease_detector.logger import get_logger
 
+import pandas as pd
+
 import zipfile
 import gdown
 import os
+import json
 
 logger = get_logger(__name__)
 
@@ -122,8 +125,6 @@ def get_patient_by_test_id(test_id: int | str) -> str:
         >>> print(patient)
         P1
     """
-
-    timepoints_patient = [3,4,4,3,2,3,2,2,3,2,2,4,2,4,1,1,1,1,4,3,1,1,2,1,1,1,1,2,1,0,2,1,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,1,1,1,1,1,2]
     
     test_id = int(test_id)
     current_id = 0
@@ -170,3 +171,46 @@ def download_dataset_from_cloud(folder_name: str, url: str, extract_folder: bool
 
     # Remove the ZIP file after extraction
     os.remove(dataset_zip)
+
+def write_results_csv(csv_path: str, results_path: str, model_type: str, dataset_id: str, fold: str, val_test: str):
+    with open(results_path, "r") as f:
+        data = json.load(f)
+
+    foreground_mean = data["foreground_mean"]
+
+    fn = foreground_mean["FN"]
+    fp = foreground_mean["FP"]
+    tn = foreground_mean["TN"]
+    tp = foreground_mean["TP"]
+    dsc = foreground_mean["Dice"]
+    iou = foreground_mean["IoU"]
+
+    epsilon = 1e-7  # Para evitar divisiones por cero
+    
+    accuracy = (tp + tn) / (tp + tn + fp + fn + epsilon)
+    precision = tp / (tp + fp + epsilon)
+    recall = tp / (tp + fn + epsilon)
+    f1_score = 2 * (precision * recall) / (precision + recall + epsilon)
+
+    new_row = pd.DataFrame([{
+        "dataId": int(dataset_id),
+        "model": model_type,
+        "fold": fold,
+        "ValTest": val_test, 
+        "dsc": dsc,
+        "iou": iou,
+        "accuracy": accuracy,
+        "precision": precision,
+        "recall": recall,
+        "f1_score": f1_score
+    }])
+
+        # Verificar si el archivo existe
+    if os.path.exists(csv_path):
+        df = pd.read_csv(csv_path)  # Cargar el CSV
+    else:
+        # Crear un DataFrame vacío con las columnas definidas
+        df = pd.DataFrame(columns=new_row.columns)
+
+    df = pd.concat([df.dropna(axis=1, how='all'), new_row], ignore_index=True)
+    df.to_csv(csv_path, index=False)

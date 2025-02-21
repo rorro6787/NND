@@ -14,7 +14,7 @@ from neuro_disease_detector.logger import get_logger
 logger = get_logger(__name__)
 
 class YoloFoldValidator:
-    def __init__(self, folds_directory: str, data_folder: str, consensus_threshold: int=2) -> None:
+    def __init__(self, folds_directory: str, data_folder: str, consensus_threshold: int=1) -> None:
         self.folds_dir = folds_directory
         self.data_folder = data_folder
         self.cth = consensus_threshold
@@ -56,29 +56,28 @@ class YoloFoldValidator:
             # Construct the full file path for each model file.
             file_path = f"{models_path}/{file_name}"
 
-            # Skip files that are not valid model files (either 'best.pt' or 'last.pt' are excluded).
-            if not (os.path.isfile(file_path) and file_name not in ["best.pt", "last.pt"]):
+            if (not os.path.isfile(file_path)) or (file_name not in ["best.pt"]):
                 continue
             
-            # Extract the epoch number from the file name using regular expression.
-            epoch = int(re.search(r'\d+', file_name).group())
+            # epoch = int(re.search(r'\d+', file_name).group())
 
             # Create a YoloValidator object for the current model file and process the data.
-            yolo_validator = YoloValidator(file_path, self.data_folder, self.cth)
+            fold_split = f"fold{self.k - int(fold[-1]) + 1}"
+            yolo_validator = YoloValidator(file_path, self.data_folder, self.cth, fold_split)
             yolo_validator.process_all_patients()
 
             # Store the confusion matrix and metrics for the current epoch.
-            cm_epoch[epoch] = yolo_validator.cm
-            metrics_epoch[epoch] = yolo_validator.metrics
+            cm_epoch["best"] = yolo_validator.cm
+            metrics_epoch["best"] = yolo_validator.metrics
 
         # Return the confusion matrix and metrics for all processed epochs.
         return cm_epoch, metrics_epoch
         
 class YoloValidator:
-    def __init__(self, model_path: str, data_folder: str, consensus_threshold: int) -> None:
+    def __init__(self, model_path: str, data_folder: str, consensus_threshold: int, fold_split: str) -> None:
         self.model = YOLO(model_path, task="segmentation", verbose=False)
-        self.data_path = f"{data_folder}/MSLesSeg-Dataset/Train"
-        self.test_patients = get_patients_split["Test"]
+        self.data_path = f"{data_folder}/MSLesSeg-Dataset/train"
+        self.test_patients = get_patients_split(fold_split)
 
         self.cm = { CM.TP : 0, CM.FP : 0, CM.TN : 0, CM.FN : 0}
         self.metrics = None
@@ -88,7 +87,9 @@ class YoloValidator:
         """Processes all patients by iterating over each patient and calling _process_patient."""
 
         # Iterate over all patients specified by test_patients and process it.
-        for pd in range(self.test_patients):
+        print(self.test_patients)
+        for pd in range(self.test_patients[0], self.test_patients[1]):
+            print(pd)
             self._process_patient(pd)
 
         # After processing all patients, compute the evaluation metrics.
@@ -271,7 +272,7 @@ def yolo_3d_prediction(volume: np.ndarray, yolo_model: YOLO) -> np.ndarray:
     # Return the predictions for all three axes as a tuple.
     return predictions_x, predictions_y, predictions_z
 
-def _yolo_3d_prediction(yolo_model: YOLO, slices: list, batch_size: int = 256) -> list:
+def _yolo_3d_prediction(yolo_model: YOLO, slices: list, batch_size: int = 128) -> list:
     """
     Perform 3D predictions using a YOLO model on a list of 2D image slices.
 

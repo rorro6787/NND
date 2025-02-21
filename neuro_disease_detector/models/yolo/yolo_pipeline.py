@@ -41,15 +41,14 @@ def yolo_init(yolo_model: YoloModel, id: str, consensus_threshold: int=2) -> Non
     
     logger.info(f"Training yolo model for...")
     train_path = train_yolo_folds(id, yolo_model, cwd)
-
-    """
+    
     logger.info("Evaluating test results...")
+    """
     yolo_fold_validator = YoloFoldValidator(train_path, cwd, consensus_threshold=consensus_threshold)
     yolo_fold_validator.validate_all_folds()
     
-    cm_fold_epoch = yolo_fold_validator.cm_fold_epoch
-    metrics_fold_epoch = yolo_fold_validator.metrics_fold_epoch
-    print(cm_fold_epoch, metrics_fold_epoch)
+    print(yolo_fold_validator.cm_fold_epoch)
+    print(yolo_fold_validator.metrics_fold_epoch)
     """
     
     logger.info("yolo pipeline completed.")
@@ -58,5 +57,5 @@ def yolo_init(yolo_model: YoloModel, id: str, consensus_threshold: int=2) -> Non
 if __name__ == "__main__":
     yolo_model = YoloModel.V11M_SEG
     consensus_threshold = 2
-    id = "024"
-    yolo_init(yolo_model, id, consensus_threshold=2)
+    id = "025"
+    yolo_init(yolo_model, id, consensus_threshold=consensus_threshold)

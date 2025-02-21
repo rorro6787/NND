@@ -94,22 +94,22 @@ def _augmentation_parameters(**augmentation_params) -> dict:
         "hsv_h" : 0.015,                         # Range: (0.0 - 1.0)         | Adjusts the hue of the image by a fraction of the color wheel, introducing color variability. Helps the model generalize across different lighting conditions.
         "hsv_s" : 0.7,                           # Range: (0.0 - 1.0)         | Alters the saturation of the image by a fraction, affecting the intensity of colors. Useful for simulating different environmental conditions.
         "hsv_v" : 0.4,                           # Range: (0.0 - 1.0)         | Modifies the value (brightness) of the image by a fraction, helping the model to perform well under various lighting conditions.
-        "degrees" : 0.0,                         # Range: (-180 - +180)       | Rotates the image randomly within the specified degree range, improving the model's ability to recognize objects at various orientations.
-        "translate" : 0.1,                       # Range: (0.0 - 1.0)         | Translates the image horizontally and vertically by a fraction of the image size, aiding in learning to detect partially visible objects.
+        "degrees" : 90,                         # Range: (-180 - +180)       | Rotates the image randomly within the specified degree range, improving the model's ability to recognize objects at various orientations.
+        "translate" : 0.25,                       # Range: (0.0 - 1.0)         | Translates the image horizontally and vertically by a fraction of the image size, aiding in learning to detect partially visible objects.
         "scale" : 0.5,                           # Range: (>=0.0)             | Scales the image by a gain factor, simulating objects at different distances from the camera.
-        "shear" : 0.0,                           # Range: (-180 - +180)       | Shears the image by a specified degree, mimicking the effect of objects being viewed from different angles.
-        "perspective" : 0.0,                     # Range: (0.0 - 0.001)       | Applies a random perspective transformation to the image, enhancing the model's ability to understand objects in 3D space.
-        "flipud" : 0.0,                          # Range: (0.0 - 1.0)         | Flips the image upside down with the specified probability, increasing the data variability without affecting the object's characteristics.
+        "shear" : 90,                           # Range: (-180 - +180)       | Shears the image by a specified degree, mimicking the effect of objects being viewed from different angles.
+        "perspective" : 0.05,                     # Range: (0.0 - 0.001)       | Applies a random perspective transformation to the image, enhancing the model's ability to understand objects in 3D space.
+        "flipud" : 0.5,                          # Range: (0.0 - 1.0)         | Flips the image upside down with the specified probability, increasing the data variability without affecting the object's characteristics.
         "fliplr" : 0.5,                          # Range: (0.0 - 1.0)         | Flips the image left to right with the specified probability, useful for learning symmetrical objects and increasing dataset diversity.
-        "bgr" : 0.0,                             # Range: (0.0 - 1.0)         | Flips the image channels from RGB to BGR with the specified probability, useful for increasing robustness to incorrect channel ordering.
+        "bgr" : 0.5,                             # Range: (0.0 - 1.0)         | Flips the image channels from RGB to BGR with the specified probability, useful for increasing robustness to incorrect channel ordering.
         "mosaic" : 1.0,                          # Range: (0.0 - 1.0)         | Combines four training images into one, simulating different scene compositions and object interactions. Highly effective for complex scene understanding.
-        "mixup" : 0.0,                           # Range: (0.0 - 1.0)         | Blends two images and their labels, creating a composite image. Enhances the model's ability to generalize by introducing label noise and visual variability.
-        "copy_paste" : 0.0,                      # Range: (0.0 - 1.0)         | Copies and pastes objects across images, useful for increasing object instances and learning object occlusion. Requires segmentation labels.
+        "mixup" : 0.5,                           # Range: (0.0 - 1.0)         | Blends two images and their labels, creating a composite image. Enhances the model's ability to generalize by introducing label noise and visual variability.
+        "copy_paste" : 0.5,                      # Range: (0.0 - 1.0)         | Copies and pastes objects across images, useful for increasing object instances and learning object occlusion. Requires segmentation labels.
         "copy_paste_mode" : "flip",              # Range: ("flip", "mixup")   | Copy-Paste augmentation method selection among the options of ("flip", "mixup").
         "auto_augment" : "randaugment",          # Range: ("randaugment",     | Automatically applies a predefined augmentation policy (randaugment, autoaugment, augmix), optimizing for classification tasks by diversifying the visual features.
                                                  #         "autoaugment", 
                                                  #         "augmix")          
-        "erasing" : 0.4,                         # Range: (0.0 - 0.9)         | Randomly erases a portion of the image during classification training, encouraging the model to focus on less obvious features for recognition.
+        "erasing" : 0.5,                         # Range: (0.0 - 0.9)         | Randomly erases a portion of the image during classification training, encouraging the model to focus on less obvious features for recognition.
         "crop_fraction" : 1.0,                   # Range: (0.1 - 1.0)         | Crops the classification image to a fraction of its size to emphasize central features and adapt to object scales, reducing background distractions.
     }
     
@@ -172,6 +172,8 @@ def train_yolo_folds(id: str, yolo_model: YoloModel, dataset_path: str) -> str:
     # Define the model name for the YOLO model and create the YAML configuration files
     yolo_model_suffix = yolo_model.value.removesuffix(".pt")
     train_path = f"{cwd}/yolo_trainings/{id}/{yolo_model_suffix}"
+    if os.path.exists(train_path):
+        return train_path
     yaml_files = _generate_yaml_files(dataset_path)
     os.makedirs(train_path, exist_ok=True)
     os.makedirs(f"{train_path}/config", exist_ok=True)

@@ -6,6 +6,7 @@ from neuro_disease_detector.utils.utils_dataset import split_assign
 from neuro_disease_detector.__init__ import CONFIG_NNUNET_SPLIT
 from neuro_disease_detector.__init__ import CONFIG_NNUNET
 from neuro_disease_detector.logger import get_logger
+from neuro_disease_detector.utils.utils_dataset import write_results_csv
 
 import subprocess, shutil, os
 
@@ -34,7 +35,7 @@ class nnUNet:
         self.val_results = f"{self.train_results}/validation"
         self.test_results = f"{self.train_results}/test"
 
-    def init(self):
+    def init(self, csv_path: str):
         download_dataset_from_cloud(self.og_dataset, "https://drive.google.com/uc?export=download&id=1A3ZpXHe-bLpaAI7BjPTSkZHyQwEP3pIi")
 
         self.create_nnu_dataset()  
@@ -50,6 +51,11 @@ class nnUNet:
 
         self.inference_test()     
         self.evaluate_test_results()
+
+        model_type = "nnUNet3D" if self.configuration == Configuration.FULL_3D else "nnUNet2D"
+
+        write_results_csv(csv_path, f"{self.val_results}/summary.json", model_type, self.dataset_id, self.fold.value, "val")
+        write_results_csv(csv_path, f"{self.test_results}/summary.json", model_type, self.dataset_id, self.fold.value, "test")
 
         _remove_files(self.test_results)
 
@@ -255,6 +261,6 @@ if __name__ == "__main__":
     dataset_id = "024"
     configuration = Configuration.FULL_3D
     fold = Fold.FOLD_5
-    trainer = Trainer.EPOCHS_1
+    trainer = Trainer.EPOCHS_100
     nnUNet = nnUNet(dataset_id, configuration, fold, trainer)
-    nnUNet.init()
+    nnUNet.init(f"{os.getcwd()}/res.csv")

@@ -20,10 +20,7 @@ class Fold(Enum):
     FOLD_3 = "2"
     FOLD_4 = "3"
     FOLD_5 = "4"
-    ALL = "all"
 
 class Configuration(Enum):
     SIMPLE_2D = "2d"
-    LOW_3D = "3d_lowres"
     FULL_3D = "3d_fullres"
-    CASCADE_FULL_3D = "3d_cascade_fullres"
