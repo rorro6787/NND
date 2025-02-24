@@ -151,9 +151,6 @@ class YoloValidator:
 
         # Compute Dice Similarity Coefficient (DSC): higher is better
         dsc = 2*self.cm[CM.TP] / (2*self.cm[CM.TP] + self.cm[CM.FP] + self.cm[CM.FN])
-
-        # Compute F1 Score: higher is better
-        f1_score = 2 * (precision * recall) / (precision + recall)
         
         # Return a dictionary of all the computed metrics with nan values replaced by 0
         self.metrics = { 
@@ -163,7 +160,6 @@ class YoloValidator:
             Metrics.SENSIBILITY : np.nan_to_num(sensibility, nan=0), 
             Metrics.IOU : np.nan_to_num(iou, nan=0), 
             Metrics.DSC : np.nan_to_num(dsc, nan=0),
-            Metrics.F1 : np.nan_to_num(f1_score, nan=0)
         }
 
     def update_cm(self, prediction: np.ndarray, mask: np.ndarray) -> None:

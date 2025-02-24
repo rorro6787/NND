@@ -18,7 +18,6 @@ class Metrics(Enum):
     ACCUARICY = "Acc"
     SENSIBILITY = "Sensibility"
     IOU = "IOU"
-    F1 = "F1 Score"
     DSC = "DSC"
 
 class CM(Enum):

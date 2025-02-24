@@ -1,47 +1,44 @@
 from neuro_disease_detector.logger import get_logger
 
 import pandas as pd
-
 import zipfile
 import gdown
 import os
-import json
 
 logger = get_logger(__name__)
 
-fold_to_patient = { "fold1": (1, 7), "fold2": (7, 14), "fold3": (14, 23), "fold4": (23, 37), "fold5": (37, 50), "test": (50, 54) }
-timepoints_patient = [3,4,4,3,2,3,2,2,3,2,2,4,2,4,1,1,1,1,4,3,1,1,2,1,1,1,1,2,1,0,2,1,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,1,1,1,1,1,2]
+fold_to_patient = { "fold1": (1, 6), "fold2": (6, 13), "fold3": (13, 20), "fold4": (20, 33), "fold5": (33, 47), "test": (47, 54) }
+timepoints_patient = [3,4,4,3,2,3,2,2,3,2,2,2,4,4,1,1,1,1,4,3,1,1,2,1,1,1,1,2,1,0,2,1,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,1,1,1,1,1,2]                      
 cwd = os.getcwd()
 
 def get_timepoints_patient(pd: int) -> int:
     """Returns the timepoints for a given patient, adjusted by -1."""
     return timepoints_patient[pd-1]
 
+def get_patient_by_test_id(test_id: int | str) -> str:
+    """ Given a test ID and a list with the number of tests per patient, return the patient to which the test belongs."""
+    
+    # Convert the test ID to an integer
+    test_id = int(test_id)
+    current_id = 0
+
+    # Iterate over the number of tests per patient
+    for i, num_tests in enumerate(timepoints_patient):
+        current_id += num_tests
+        if test_id <= current_id:
+            return i + 1
+    # If the test ID is not found, return -1
+    return -1
+
 def get_patients_split(split: str) -> tuple:
     """Returns the list of patients for a given split (e.g., train, test)."""
     return fold_to_patient[split]
 
 def split_assign(pd: int) -> str:
-        """
-        Assign a patient to a fold based on the patient ID.
-
-        Args:
-            pd (int): The patient ID.
-
-        Returns:
-            str: The fold to which the patient belongs.
-
-        Example:
-            >>> from neuro_disease_detector.utils.utils_dataset import split_assign
-            >>>
-            >>> # Assign the patient to a fold based on their ID
-            >>> fold = split_assign(1)
-            >>> print(fold)
-            fold1
-        """
+        """Assign a patient to a fold based on the patient ID."""
 
         # Define the boundaries for each fold
-        folds = [1, 7, 14, 23, 37, 50]
+        folds = [fold_to_patient[f"fold{i}"][0] for i in range(1, 6)] + [fold_to_patient["test"][0]]
 
         # Assign the patient to a fold based on their ID
         for i, start in enumerate(folds[:-1]):
@@ -51,106 +48,9 @@ def split_assign(pd: int) -> str:
         # If the patient ID is not within the range of any fold, return "test"
         return "Test"
 
-def patients_timepoints(dataset_dir: str) -> dict:
-    """
-    Get the count of timepoints for each patient in the dataset.
-
-    Args:
-        dataset_dir (str): The path to the dataset directory.
-
-    Returns:
-        dict: A dictionary containing the count of timepoints for each patient.
-
-    Example:
-        >>> from neuro_disease_detector.utils.utils_dataset import patients_timepoints
-        >>> import os
-        >>>
-        >>> # Define the path to the dataset directory
-        >>> dataset_dir = os.getcwd()
-        >>>
-        >>> timepoints = _patients_timepoints(dataset_dir)
-        >>> print(timepoints)
-        {1: 4, 2: 4, 3: 4, 4: 4, 5: 4, 6: 4, ...}
-    """
-    
-    # Define the base dataset path. By default, it's the "train" directory within the given dataset directory.
-    dataset_path = f"{dataset_dir}/MSLesSeg-Dataset/train"
-
-    # Initialize a dictionary to store the count of timepoints for each patient.
-    timepoints = {}
-    
-    # Iterate through patient directories numbered from 1 to 53.
-    for pd in range(1, 54):
-        # Initialize the count of timepoints for the current patient to 0.
-        timepoints[pd] = 0
-        
-        # Skip patient 30 as an exception (possibly due to missing or invalid data).
-        if pd == 30:
-            continue
-
-        # Define the path for the current patient directory.
-        pd_path = f"{dataset_path}/P{pd}"
-        
-        # Iterate through the potential timepoint directories (T1 to T4).
-        for td in range(1, 5):
-            # Check if the directory for the current timepoint exists. If not, exit the loop.
-            if not os.path.exists(f"{pd_path}/T{td}"):
-                break
-            
-            # Increment the timepoints count for the current patient.
-            timepoints[pd] += 1
-
-    # Return the dictionary containing the count of timepoints for each patient.
-    return timepoints
-
-def get_patient_by_test_id(test_id: int | str) -> str:
-    """ 
-    Given a test ID and a list with the number of tests per patient,
-    return the patient to which the test belongs.
-
-    Args:
-        test_id (int | str): The ID of the test.
-
-    Returns:
-        str: The patient to which the test belongs.
-
-    Example:
-        >>> from neuro_disease_detector.utils.utils_dataset import get_patient_by_test_id
-        >>>
-        >>> # Define the test ID and the list of timepoints per patient
-        >>> test_id = 3
-        >>>
-        >>> # Get the patient to which the test belongs
-        >>> patient = get_patient_by_test_id(test_id)
-        >>> print(patient)
-        P1
-    """
-    
-    test_id = int(test_id)
-    current_id = 0
-
-    for i, num_tests in enumerate(timepoints_patient):
-        current_id += num_tests
-        if test_id <= current_id:
-            return f"P{i + 1}"
-        
-    return "ID not found"
-
 def download_dataset_from_cloud(folder_name: str, url: str, extract_folder: bool = True) -> None:
     """
-    Downloads and extracts a dataset from a cloud storage URL.
-    
-    Args:
-        folder_name (str): The folder where the dataset will be extracted.
-        url (str): The URL to download the dataset from.
-    
-    Returns:
-        None
-
-    Raises:
-        FileNotFoundError: If the downloaded file cannot be found.
-        zipfile.BadZipFile: If the ZIP file is invalid or corrupted.
-    """
+    Downloads and extracts a dataset from a cloud storage URL."""
 
     logger.info(f"Downloading MSLesSeg-Dataset for yolo/nnUNet pipeline...")
     if os.path.exists(folder_name):
@@ -172,45 +72,23 @@ def download_dataset_from_cloud(folder_name: str, url: str, extract_folder: bool
     # Remove the ZIP file after extraction
     os.remove(dataset_zip)
 
-def write_results_csv(csv_path: str, results_path: str, model_type: str, dataset_id: str, fold: str, val_test: str):
-    with open(results_path, "r") as f:
-        data = json.load(f)
+def write_results_csv(csv_path: str, algorithm, instance, metric_name, execution_id, metric_value):
+    """Write the results of an algorithm execution to a CSV file."""
 
-    foreground_mean = data["foreground_mean"]
-
-    fn = foreground_mean["FN"]
-    fp = foreground_mean["FP"]
-    tn = foreground_mean["TN"]
-    tp = foreground_mean["TP"]
-    dsc = foreground_mean["Dice"]
-    iou = foreground_mean["IoU"]
-
-    epsilon = 1e-7  # Para evitar divisiones por cero
-    
-    accuracy = (tp + tn) / (tp + tn + fp + fn + epsilon)
-    precision = tp / (tp + fp + epsilon)
-    recall = tp / (tp + fn + epsilon)
-    f1_score = 2 * (precision * recall) / (precision + recall + epsilon)
-
+    # Create a new row with the algorithm, instance, metric name, execution ID, and metric value
     new_row = pd.DataFrame([{
-        "dataId": int(dataset_id),
-        "model": model_type,
-        "fold": fold,
-        "ValTest": val_test, 
-        "dsc": dsc,
-        "iou": iou,
-        "accuracy": accuracy,
-        "precision": precision,
-        "recall": recall,
-        "f1_score": f1_score
+        "Algorithm": algorithm,
+        "Instance": instance,
+        "MetricName": metric_name,
+        "ExecutionId": int(execution_id), 
+        "MetricValue": metric_value,
     }])
 
-        # Verificar si el archivo existe
-    if os.path.exists(csv_path):
-        df = pd.read_csv(csv_path)  # Cargar el CSV
-    else:
-        # Crear un DataFrame vacío con las columnas definidas
-        df = pd.DataFrame(columns=new_row.columns)
+    # Create a new CSV file if it doesn't exist
+    data = pd.read_csv(csv_path) if os.path.exists(csv_path) else pd.DataFrame(columns=new_row.columns)
 
-    df = pd.concat([df.dropna(axis=1, how='all'), new_row], ignore_index=True)
-    df.to_csv(csv_path, index=False)
+    # Append the new row to the existing data
+    data = pd.concat([data.dropna(axis=1, how='all'), new_row], ignore_index=True)
+
+    # Save the updated data to the CSV file
+    data.to_csv(csv_path, index=False)

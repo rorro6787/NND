@@ -28,4 +28,4 @@ Once you have activated the virtual environment, you can install the project dep
    :maxdepth: 2
    :caption: Contents:
 
-   API/api
+   API/api_test
