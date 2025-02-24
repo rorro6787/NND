@@ -7,13 +7,12 @@ import os
 
 logger = get_logger(__name__)
 
-fold_to_patient = { "fold1": (1, 6), "fold2": (6, 13), "fold3": (13, 20), "fold4": (20, 33), "fold5": (33, 47), "test": (47, 54) }
-timepoints_patient = [3,4,4,3,2,3,2,2,3,2,2,2,4,4,1,1,1,1,4,3,1,1,2,1,1,1,1,2,1,0,2,1,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,1,1,1,1,1,2]                      
-cwd = os.getcwd()
+FOLD_TO_PATIENT = { "fold1": (1, 6), "fold2": (6, 13), "fold3": (13, 20), "fold4": (20, 33), "fold5": (33, 47), "test": (47, 54) }
+TIMEPOINTS_PATIENT = [3,4,4,3,2,3,2,2,3,2,2,2,4,4,1,1,1,1,4,3,1,1,2,1,1,1,1,2,1,0,2,1,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,1,1,1,1,1,2]                      
 
 def get_timepoints_patient(pd: int) -> int:
-    """Returns the timepoints for a given patient, adjusted by -1."""
-    return timepoints_patient[pd-1]
+    """Returns the timepoints for a given patient."""
+    return TIMEPOINTS_PATIENT[pd-1]
 
 def get_patient_by_test_id(test_id: int | str) -> str:
     """ Given a test ID and a list with the number of tests per patient, return the patient to which the test belongs."""
@@ -23,7 +22,7 @@ def get_patient_by_test_id(test_id: int | str) -> str:
     current_id = 0
 
     # Iterate over the number of tests per patient
-    for i, num_tests in enumerate(timepoints_patient):
+    for i, num_tests in enumerate(TIMEPOINTS_PATIENT):
         current_id += num_tests
         if test_id <= current_id:
             return i + 1
@@ -32,27 +31,26 @@ def get_patient_by_test_id(test_id: int | str) -> str:
 
 def get_patients_split(split: str) -> tuple:
     """Returns the list of patients for a given split (e.g., train, test)."""
-    return fold_to_patient[split]
+    return FOLD_TO_PATIENT[split]
 
 def split_assign(pd: int) -> str:
-        """Assign a patient to a fold based on the patient ID."""
+    """Assign a patient to a fold based on the patient ID."""
 
-        # Define the boundaries for each fold
-        folds = [fold_to_patient[f"fold{i}"][0] for i in range(1, 6)] + [fold_to_patient["test"][0]]
+    # Define the boundaries for each fold
+    folds = [FOLD_TO_PATIENT[f"fold{i}"][0] for i in range(1, 6)] + [FOLD_TO_PATIENT["test"][0]]
 
-        # Assign the patient to a fold based on their ID
-        for i, start in enumerate(folds[:-1]):
-            # If the patient ID is within the range of the current fold, return the fold
-            if pd >= start and pd < folds[i + 1]:
-                return f"fold{i + 1}"
-        # If the patient ID is not within the range of any fold, return "test"
-        return "Test"
+    # Assign the patient to a fold based on their ID
+    for i, start in enumerate(folds[:-1]):
+        # If the patient ID is within the range of the current fold, return the fold
+        if pd >= start and pd < folds[i + 1]:
+            return f"fold{i + 1}"
+    # If the patient ID is not within the range of any fold, return "test"
+    return "Test"
 
 def download_dataset_from_cloud(folder_name: str, url: str, extract_folder: bool = True) -> None:
-    """
-    Downloads and extracts a dataset from a cloud storage URL."""
+    """Downloads and extracts a dataset from a cloud storage URL."""
 
-    logger.info(f"Downloading MSLesSeg-Dataset for yolo/nnUNet pipeline...")
+    logger.info(f"Downloading {folder_name} for yolo/nnUNet pipeline...")
     if os.path.exists(folder_name):
         return
     

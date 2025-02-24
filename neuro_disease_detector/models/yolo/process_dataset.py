@@ -70,12 +70,14 @@ def _create_yolo_dataset(yolo_dataset: str) -> None:
     """
 
     # Create the necessary directories for the YOLO dataset
-    for i in range(1, 6):
-        os.makedirs(f"{yolo_dataset}/fold{i}/images", exist_ok=True)
-        os.makedirs(f"{yolo_dataset}/fold{i}/labels", exist_ok=True)
+    planes = ["sagittal", "coronal", "axial"]
+    for plane in planes:
+        for i in range(1, 6):
+            os.makedirs(f"{yolo_dataset}/fold{i}/{plane}/images", exist_ok=True)
+            os.makedirs(f"{yolo_dataset}/fold{i}/{plane}/labels", exist_ok=True)
 
-    os.makedirs(f"{yolo_dataset}/Test/images", exist_ok=True)
-    os.makedirs(f"{yolo_dataset}/Test/labels", exist_ok=True)
+        os.makedirs(f"{yolo_dataset}/Test/{plane}/images", exist_ok=True)
+        os.makedirs(f"{yolo_dataset}/Test/{plane}/labels", exist_ok=True)
 
 def _make_save_slices(data: list, mask: np.ndarray, yolo_dataset: str, fold_assign: str, pd: int, td: int) -> None:
     """
@@ -103,19 +105,18 @@ def _make_save_slices(data: list, mask: np.ndarray, yolo_dataset: str, fold_assi
         sag_flair = data[0][i, :, :]
         sag_t1 = data[1][i, :, :]
         sag_t2 = data[2][i, :, :]
-        sag_mask_ann = extract_contours_mask(sag_mask)
 
         # Save the image slices as PNG files in the corresponding directory 
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_FLAIR_sagittal_{i}.png", sag_flair, cmap="gray")
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_T1_sagittal_{i}.png", sag_t1, cmap="gray")
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_T2_sagittal_{i}.png", sag_t2, cmap="gray")
+        plt.imsave(f"{yolo_dataset}/{fold_assign}/sagittal/images/P{pd}_T{td}_FLAIR_sagittal_{i}.png", sag_flair, cmap="gray")
+        plt.imsave(f"{yolo_dataset}/{fold_assign}/sagittal/images/P{pd}_T{td}_T1_sagittal_{i}.png", sag_t1, cmap="gray")
+        plt.imsave(f"{yolo_dataset}/{fold_assign}/sagittal/images/P{pd}_T{td}_T2_sagittal_{i}.png", sag_t2, cmap="gray")
 
         # Save the coordinates to the text files
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_FLAIR_sagittal_{i}.txt", 'w') as f:
+        with open(f"{yolo_dataset}/{fold_assign}/sagittal/labels/P{pd}_T{td}_FLAIR_sagittal_{i}.txt", 'w') as f:
             f.write(sag_mask_ann)
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_T1_sagittal_{i}.txt", 'w') as f:
+        with open(f"{yolo_dataset}/{fold_assign}/sagittal/labels/P{pd}_T{td}_T1_sagittal_{i}.txt", 'w') as f:
             f.write(sag_mask_ann)
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_T2_sagittal_{i}.txt", 'w') as f:
+        with open(f"{yolo_dataset}/{fold_assign}/sagittal/labels/P{pd}_T{td}_T2_sagittal_{i}.txt", 'w') as f:
             f.write(sag_mask_ann)
 
     # Iterate over all coronal slices in the 3D mask array
@@ -130,16 +131,16 @@ def _make_save_slices(data: list, mask: np.ndarray, yolo_dataset: str, fold_assi
         cor_t2 = data[2][:, j, :]
     
         # Save the image slices as PNG files in the corresponding directory
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_FLAIR_coronal_{j}.png", cor_flair, cmap="gray")
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_T1_coronal_{j}.png", cor_t1, cmap="gray")
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_T2_coronal_{j}.png", cor_t2, cmap="gray")
+        plt.imsave(f"{yolo_dataset}/{fold_assign}/coronal/images/P{pd}_T{td}_FLAIR_coronal_{j}.png", cor_flair, cmap="gray")
+        plt.imsave(f"{yolo_dataset}/{fold_assign}/coronal/images/P{pd}_T{td}_T1_coronal_{j}.png", cor_t1, cmap="gray")
+        plt.imsave(f"{yolo_dataset}/{fold_assign}/coronal/images/P{pd}_T{td}_T2_coronal_{j}.png", cor_t2, cmap="gray")
 
         # Save the coordinates to the text files
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_FLAIR_coronal_{j}.txt", 'w') as f:
+        with open(f"{yolo_dataset}/{fold_assign}/coronal/labels/P{pd}_T{td}_FLAIR_coronal_{j}.txt", 'w') as f:
             f.write(cor_mask_ann)
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_T1_coronal_{j}.txt", 'w') as f:
+        with open(f"{yolo_dataset}/{fold_assign}/coronal/labels/P{pd}_T{td}_T1_coronal_{j}.txt", 'w') as f:
             f.write(cor_mask_ann)
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_T2_coronal_{j}.txt", 'w') as f:
+        with open(f"{yolo_dataset}/{fold_assign}/coronal/labels/P{pd}_T{td}_T2_coronal_{j}.txt", 'w') as f:
             f.write(cor_mask_ann)
 
     # Iterate over all axial slices in the 3D mask array
@@ -154,14 +155,14 @@ def _make_save_slices(data: list, mask: np.ndarray, yolo_dataset: str, fold_assi
         axi_t2 = data[2][:, :, k]
         
         # Save the image slices as PNG files in the corresponding directory
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_FLAIR_axial_{k}.png", axi_flair, cmap="gray")
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_T1_axial_{k}.png", axi_t1, cmap="gray")
-        plt.imsave(f"{yolo_dataset}/{fold_assign}/images/P{pd}_T{td}_T2_axial_{k}.png", axi_t2, cmap="gray")
+        plt.imsave(f"{yolo_dataset}/{fold_assign}/axial/images/P{pd}_T{td}_FLAIR_axial_{k}.png", axi_flair, cmap="gray")
+        plt.imsave(f"{yolo_dataset}/{fold_assign}/axial/images/P{pd}_T{td}_T1_axial_{k}.png", axi_t1, cmap="gray")
+        plt.imsave(f"{yolo_dataset}/{fold_assign}/axial/images/P{pd}_T{td}_T2_axial_{k}.png", axi_t2, cmap="gray")
 
         # Save the coordinates to the text files
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_FLAIR_axial_{k}.txt", 'w') as f:
+        with open(f"{yolo_dataset}/{fold_assign}/axial/labels/P{pd}_T{td}_FLAIR_axial_{k}.txt", 'w') as f:
             f.write(axi_mask_ann)
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_T1_axial_{k}.txt", 'w') as f:
+        with open(f"{yolo_dataset}/{fold_assign}/axial/labels/P{pd}_T{td}_T1_axial_{k}.txt", 'w') as f:
             f.write(axi_mask_ann)
-        with open(f"{yolo_dataset}/{fold_assign}/labels/P{pd}_T{td}_T2_axial_{k}.txt", 'w') as f:
+        with open(f"{yolo_dataset}/{fold_assign}/axial/labels/P{pd}_T{td}_T2_axial_{k}.txt", 'w') as f:
             f.write(axi_mask_ann)

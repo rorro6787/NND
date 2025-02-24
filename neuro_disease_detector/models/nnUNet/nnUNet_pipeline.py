@@ -30,6 +30,9 @@ class nnUNet:
         trainer (Trainer): 
             The trainer object used for training the model.
 
+        k (int):
+            Number of folds for cross-validation.
+
         nnunet_cwd (str): 
             The base directory for nnUNet.
 
@@ -62,7 +65,7 @@ class nnUNet:
 
         logger (Logger):
             The logger object for the nnUNet model.
-    
+
     Methods:
         __init__(self, dataset_id: str, configuration: Configuration, fold: Fold, trainer: Trainer):
             Initializes the nnUNet class with dataset, configuration, fold, and trainer.
@@ -125,6 +128,7 @@ class nnUNet:
         self.configuration = configuration
         self.fold = fold
         self.trainer = trainer
+        self.k = 5
 
         self.nnunet_cwd = f"{cwd}/nnu_net"
         self.og_dataset = f"{cwd}/MSLesSeg-Dataset"
@@ -143,7 +147,7 @@ class nnUNet:
 
         self.logger = get_logger(__name__)
 
-    def init(self, csv_path: str):
+    def execute_pipeline(self, csv_path: str):
         """
         Initializes the nnUNet environment, processes the dataset, trains the model,
         and writes the results to a CSV file.
@@ -178,20 +182,19 @@ class nnUNet:
         self.create_nnu_dataset()  
         self.configure_environment()   
         self.process_dataset()
-
-        _remove_files(f"{self.nnUNet_datapath}/imagesTr")
-        _remove_files(f"{self.nnUNet_datapath}/labelsTr") 
-
         self.train_nnUNet()
-
-        _remove_files(self.val_results) 
-
         self.inference_test()     
         self.evaluate_test_results()
-
         self.write_results(csv_path)
-
+        
+        _remove_files(f"{self.nnUNet_datapath}/imagesTr")
+        _remove_files(f"{self.nnUNet_datapath}/labelsTr") 
+        _remove_files(self.val_results) 
         _remove_files(self.test_results)
+
+        if self.configuration == Configuration.FULL_3D and self.fold == Fold.FOLD_5:
+            _remove_folder(self.nnUNet_datapath)
+            _remove_folder(f"{self.nnUNet_preprocessed}/Dataset{self.dataset_id}_MSLesSeg")
 
     def write_results(self, csv_path: str) -> None:
         """
@@ -252,14 +255,14 @@ class nnUNet:
         TEST_RESULTS_PATH = f"{self.test_results}/summary.json"
         VAL_RESULTS_PATH = f"{self.val_results}/summary.json"
         ALGORITHM = "nnUNet3D" if self.configuration == Configuration.FULL_3D else "nnUNet2D"
-        EXECUTON_ID = int(self.dataset_id) * 5 + int(self.fold.value) + 1
+        EXECUTON_ID = int(self.dataset_id) * self.k + int(self.fold.value) + 1
         BRATS_INITIAL_INDEX = 84
 
         _ = _write_overall(csv_path, VAL_RESULTS_PATH, ALGORITHM, "GlobalV", EXECUTON_ID)
         data = _write_overall(csv_path, TEST_RESULTS_PATH, ALGORITHM, "GlovalT", EXECUTON_ID)
 
         brats_i = BRATS_INITIAL_INDEX
-        for idx, instance_metrics in enumerate(data["metric_per_case"]):
+        for instance_metrics in data["metric_per_case"]:
             # Write the results for each instance to the CSV file
             instance_metrics = instance_metrics["metrics"]["1"]
             dsc = instance_metrics["Dice"]
@@ -589,3 +592,8 @@ def _remove_files(folder_path: str):
     for file in os.listdir(folder_path):
         if file.startswith("BRATS_"):
             os.remove(f"{folder_path}/{file}")
+
+def _remove_folder(folder_path):
+    """Deletes the specified folder and all its contents if it exists."""
+    if os.path.exists(folder_path):
+        shutil.rmtree(folder_path)

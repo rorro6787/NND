@@ -14,7 +14,7 @@ from neuro_disease_detector.logger import get_logger
 logger = get_logger(__name__)
 
 class YoloFoldValidator:
-    def __init__(self, folds_directory: str, data_folder: str, consensus_threshold: int=1) -> None:
+    def __init__(self, folds_directory: str, data_folder: str, consensus_threshold: int = 2) -> None:
         self.folds_dir = folds_directory
         self.data_folder = data_folder
         self.cth = consensus_threshold

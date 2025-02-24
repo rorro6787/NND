@@ -109,7 +109,7 @@ def _augmentation_parameters(**augmentation_params) -> dict:
         "auto_augment" : "randaugment",          # Range: ("randaugment",     | Automatically applies a predefined augmentation policy (randaugment, autoaugment, augmix), optimizing for classification tasks by diversifying the visual features.
                                                  #         "autoaugment", 
                                                  #         "augmix")          
-        "erasing" : 0.4,                         # Range: (0.0 - 0.9)         | Randomly erases a portion of the image during classification training, encouraging the model to focus on less obvious features for recognition.
+        "erasing" : 0.0,                         # Range: (0.0 - 0.9)         | Randomly erases a portion of the image during classification training, encouraging the model to focus on less obvious features for recognition.
         "crop_fraction" : 1.0,                   # Range: (0.1 - 1.0)         | Crops the classification image to a fraction of its size to emphasize central features and adapt to object scales, reducing background distractions.
     }
     
