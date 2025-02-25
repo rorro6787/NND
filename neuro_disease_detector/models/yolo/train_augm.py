@@ -2,12 +2,195 @@ from ultralytics import YOLO
 import yaml
 import os
 
-from neuro_disease_detector.models.yolo.__init__ import YoloModel
+from neuro_disease_detector.models.yolo.__init__ import YoloModel, Trainer, Validator
 from neuro_disease_detector.logger import get_logger
 
 logger = get_logger(__name__)
 cwd = os.getcwd()
 
+
+    
+class YoloFoldTrainer:
+    """
+    Class for training a YOLO model for image segmentation using a specified dataset with a 5-fold cross-validation setup.
+
+    Attributes:
+        id (str): 
+            ID for the training fold.
+
+        yolo_model (YoloModel): 
+            The YOLO model to train.
+
+        trainer (Trainer): 
+            The training strategy to use.
+
+        train_path (str):  
+            The path to the directory where the training results will be saved.
+
+        dataset_path (str): 
+            The path to the dataset directory
+        
+        k (int):
+            The number of folds for cross-validation.
+
+        logger (Logger):
+            The logger instance for the YOLO fold trainer.
+
+    Methods:
+        __init__(self, id: str, yolo_model: YoloModel, trainer: Trainer, dataset_path: str):
+            Initializes the YOLO fold trainer with the specified ID, YOLO model, trainer, and dataset path.
+        
+        train_k_fold(self):
+            Trains the YOLO model for image segmentation using a specified dataset with a 5-fold cross-validation setup.
+
+        _train_yolo(self, yaml_file_path: str, fold: str):
+            Trains a YOLO model for image segmentation using a specified dataset.
+
+        _generate_yaml_files(self) -> list:
+            Generate YAML configuration files for each fold in a 5-fold cross-validation setup.
+    """
+    
+    def __init__(self, id: str, yolo_model: YoloModel, trainer: Trainer, dataset_path: str) -> None:
+        """
+        Initialize the YOLO fold trainer.
+
+        Args:
+            id (str): 
+                ID for the training fold
+
+            yolo_model (YoloModel): 
+                The YOLO model to train.
+
+            trainer (Trainer): 
+                The training strategy to use.
+
+            dataset_path (str): 
+                The path to the dataset directory.
+
+        Returns:
+            None
+
+        Example:
+            >>> from neuro_disease_detector.models.yolo.__init__ import YoloModel, Trainer
+            >>> from neuro_disease_detector.models.yolo.train_augm import YoloFoldTrainer
+            >>> import os
+            >>> 
+            >>> dataset_id = "024"
+            >>> trainer = Trainer.FULL_3D
+            >>> dataset_path = os.getcwd()
+            >>> yolo_fold_trainer = YoloFoldTrainer(dataset_id, YoloModel.V11M_SEG, trainer, dataset_path)
+        """
+
+        # Define the model name for the YOLO model and create the YAML configuration files
+        self.id = id
+        self.yolo_model = yolo_model.value.removesuffix(".pt")
+        self.trainer = trainer
+        self.train_path = f"{cwd}/yolo_trainings/{id}/{self.yolo_model}/{trainer.value}"
+        self.dataset_path = dataset_path
+        self.k = 5
+
+        self.logger = get_logger(__name__)
+        
+    def train_k_fold(self) -> None:
+        """
+        Trains the YOLO model for image segmentation using a specified dataset with a 5-fold cross-validation setup.
+
+        Args:
+            self.train_path (str): 
+                The path to the directory where the training results will be saved.
+
+        Returns:
+            None
+        
+        Example:
+            >>> from neuro_disease_detector.models.yolo.__init__ import YoloModel, Trainer
+            >>> from neuro_disease_detector.models.yolo.train_augm import YoloFoldTrainer
+            >>> import os
+            >>> 
+            >>> dataset_id = "024"
+            >>> trainer = Trainer.FULL_3D
+            >>> dataset_path = os.getcwd()
+            >>> yolo_fold_trainer = YoloFoldTrainer(dataset_id, YoloModel.V11M_SEG, trainer, dataset_path)
+            >>> yolo_fold_trainer.train_k_fold()
+        """
+
+        # Generate the YAML configuration files for each fold
+        yaml_files = self._generate_yaml_files()
+        os.makedirs(self.train_path, exist_ok=True)
+        os.makedirs(f"{self.train_path}/config", exist_ok=True)
+        
+        for index, yaml_data in enumerate(yaml_files):
+            # Save the YAML configuration for this fold
+            yaml_file_path = f"{self.train_path}/config/fold{index+1}.yaml"
+            
+            # Write the YAML data to the file
+            with open(yaml_file_path, 'w') as yaml_file:
+                yaml.dump(yaml_data, yaml_file, default_flow_style=False)
+
+            # Define the model name for this fold and train the model
+            fold = f"fold{index + 1}"
+            self.logger.info(f"Training YOLO model for fold {fold}...")
+            self._train_yolo(yaml_file_path, fold)
+
+    def _train_yolo(self, yaml_file_path: str, fold: str) -> None:
+        """Trains a YOLO model for image segmentation using a specified dataset."""
+
+        # Define the training and augmentation parameters for the YOLO model
+        train_params = _train_parameters()
+        augmentation_params = _augmentation_parameters()
+        params = {**train_params, **augmentation_params}
+
+        if self.trainer == Trainer.FULL_3D or self.trainer == Trainer.SIMPLE_CORONAL:
+            params["imgsz"] = 256
+
+        # Train the model with the specified dataset and parameters
+        model = YOLO(self.yolo_model, task="segmentation")
+        model.train(
+            data=yaml_file_path,           # Path to the YAML file with data configuration
+            project=self.train_path,       # Project directory for results
+            save_dir=self.train_path,      # Directory to save the trained model
+            name=fold,                     # Experiment/model name
+            **params                       # Training parameters
+        )
+
+    def _generate_yaml_files(self) -> list:
+        """Generate YAML configuration files for each fold in a 5-fold cross-validation setup."""
+
+        # Define the folds for the dataset
+        fold_configs = []
+        
+        # Create a mapping for validation folds
+        val_mapping = { 1:5, 2:4, 3:3, 4:2, 5:1 }
+        
+        # Iterate over each fold to create train, val splits
+        for i in range(1, self.k + 1):
+            # Initialize the data configuration for this fold
+            data = {'train': [], 'val': [], 'nc': 1, 'names': ['multiple_esclerosis']}
+            
+            # Assign validation fold based on mapping
+            val_fold = val_mapping[i]
+            if self.trainer == Trainer.FULL_3D:
+                data['val'].append(f"{self.dataset_path}/MSLesSeg-Dataset-a/fold{val_fold}/{Trainer.SIMPLE_AXIAL.value}/images")
+                data['val'].append(f"{self.dataset_path}/MSLesSeg-Dataset-a/fold{val_fold}/{Trainer.SIMPLE_CORONAL.value}/images")
+                data['val'].append(f"{self.dataset_path}/MSLesSeg-Dataset-a/fold{val_fold}/{Trainer.SIMPLE_SAGITTAL.value}/images")
+            else:
+                data['val'].append(f"{self.dataset_path}/MSLesSeg-Dataset-a/fold{val_fold}/{self.trainer.value}/images")
+            
+            # Append the training data for all folds except the validation fold
+            for j in range(1, self.k + 1):
+                if j != val_fold:
+                    if self.trainer == Trainer.FULL_3D:
+                        data['train'].append(f"{self.dataset_path}/MSLesSeg-Dataset-a/fold{j}/{Trainer.SIMPLE_AXIAL.value}/images")
+                        data['train'].append(f"{self.dataset_path}/MSLesSeg-Dataset-a/fold{j}/{Trainer.SIMPLE_CORONAL.value}/images")
+                        data['train'].append(f"{self.dataset_path}/MSLesSeg-Dataset-a/fold{j}/{Trainer.SIMPLE_SAGITTAL.value}/images")
+                    else:
+                        data['train'].append(f"{self.dataset_path}/MSLesSeg-Dataset-a/fold{j}/{self.trainer.value}/images")
+            
+            # Append this iteration's configuration to the list
+            fold_configs.append(data)
+        
+        return fold_configs
+            
 def _train_parameters(**train_params) -> dict:
     """
     Define the training parameters for the YOLO model.
@@ -29,17 +212,17 @@ def _train_parameters(**train_params) -> dict:
 
     # Define the training parameters for the YOLO model
     train_parameters = {
-        "epochs" : 100,                # Number of training epochs
-        "imgsz" : 320,                 # Image size (width and height)
-        "batch" : -1,                  # Batch size, -1 for default
-        "device" : 0,                  # Device ID for training (0 for first GPU)
-        "fraction" : 1,                # Fraction of dataset for training
-        "plots" : True,                # Generate training plots
-        "save_period" : 100,           # Save model every 'n' epochs
-        "dropout" : 0.25,              # Dropout rate for regularization
-        "patience" : 20,               # Early stopping patience (number of epochs)
-        "resume" : False,              # Whether to resume training from the last checkpoint
-        "pretrained" : True,           # Use pretrained weights
+        "epochs" : 75,                   # Number of training epochs
+        "imgsz" : 192,                   # Image size (width and height)
+        "batch" : -1,                    # Batch size, -1 for default
+        "device" : 0,                    # Device ID for training (0 for first GPU)
+        "fraction" : 1,                  # Fraction of dataset for training
+        "plots" : True,                  # Generate training plots
+        "save_period" : 75,              # Save model every 'n' epochs
+        "dropout" : 0.2,                 # Dropout rate for regularization
+        "patience" : 15,                 # Early stopping patience (number of epochs)
+        "resume" : False,                # Whether to resume training from the last checkpoint
+        "pretrained" : True,             # Use pretrained weights
         # "freeze" : [0],                # Freeze specific layers (list of layer indices)
         # "hyp" : None,                  # Hyperparameter file path or None for defaults
         # "local_rank" : -1,             # Local GPU rank for distributed training
@@ -116,109 +299,3 @@ def _augmentation_parameters(**augmentation_params) -> dict:
     # Update default parameters with the custom ones passed as keyword arguments
     augmentation_parameters.update(**augmentation_params)
     return augmentation_parameters
-
-def train_yolo(yolo_model: YoloModel, yaml_file_path: str, train_path: str, fold: str) -> None:
-    """
-    Trains a YOLO model for image segmentation using a specified dataset.
-
-    Args:
-        model_name (YoloModel): The name of the experiment or model.
-        yaml_file_path (str): Path to the YAML file containing data configuration for training.
-        train_path (str): The path to the directory where the training results will be saved.
-        fold (str): The fold name for the current training iteration.
-
-    Returns:
-        None
-    """
-
-    # Define the training and augmentation parameters for the YOLO model
-    train_params = _train_parameters()
-    augmentation_params = _augmentation_parameters()
-    params = {**train_params, **augmentation_params}
-
-    # Train the model with the specified dataset and parameters
-    model = YOLO(yolo_model.value, task="segmentation")
-    model.train(
-        data=yaml_file_path,        # Path to the YAML file with data configuration
-        project=train_path,         # Project directory for results
-        save_dir=train_path,        # Directory to save the trained model
-        name=fold,                  # Experiment/model name
-        **params                    # Training parameters
-    )
-
-def train_yolo_folds(id: str, yolo_model: YoloModel, dataset_path: str) -> str:
-    """
-    Trains the YOLO segmentation model using 5-fold cross-validation. This function iterates through 5 folds, generating a model name and corresponding YAML configuration file for each fold, then calls `train_neuro_system` to train the model.
-
-    Args:
-        id (str): ID for the training fold
-        yolo_model (YoloModel): The YOLO model to train.
-        dataset_path (str): The path to the dataset directory.
-
-    Returns:
-        train_path (str): The path where the training results are stored.
-
-    Example:
-        >>> from neuro_disease_detector.yolo.train_augm import train_yolo_folds
-        >>> from neuro_disease_detector.yolo.__init__ import YoloModel
-        >>>
-        >>> # Define the path to the dataset directory
-        >>> dataset_path = "/path/to/dataset"
-        >>>
-        >>> # Train the YOLO model using 5-fold cross-validation
-        >>> train_yolo_folds(YoloModel.V8N_SEG, dataset_path)
-    """
-
-    # Define the model name for the YOLO model and create the YAML configuration files
-    yolo_model_suffix = yolo_model.value.removesuffix(".pt")
-    train_path = f"{cwd}/yolo_trainings/{id}/{yolo_model_suffix}"
-    if os.path.exists(train_path):
-        return train_path
-    yaml_files = _generate_yaml_files(dataset_path)
-    os.makedirs(train_path, exist_ok=True)
-    os.makedirs(f"{train_path}/config", exist_ok=True)
-    
-    for index, yaml_data in enumerate(yaml_files):
-        # Save the YAML configuration for this fold
-        yaml_file_path = f"{train_path}/config/fold{index+1}.yaml"
-        
-        # Write the YAML data to the file
-        with open(yaml_file_path, 'w') as yaml_file:
-            yaml.dump(yaml_data, yaml_file, default_flow_style=False)
-
-        # Define the model name for this fold and train the model
-        fold = f"fold{index+1}"
-        logger.info(fold)
-        train_yolo(yolo_model, yaml_file_path, train_path, fold)
-
-    return train_path
-
-def _generate_yaml_files(dataset_path: str) -> list:
-    """Generate YAML configuration files for each fold in a 5-fold cross-validation setup."""
-
-    # Define the folds for the dataset
-    fold_configs = []
-    k = 5
-    
-    # Create a mapping for validation folds
-    val_mapping = { 1:5, 2:4, 3:3, 4:2, 5:1 }
-    
-    # Iterate over each fold to create train, val splits
-    for i in range(1, k + 1):
-        # Initialize the data configuration for this fold
-        data = {'train': [], 'val': '', 'nc': 1, 'names': ['multiple_esclerosis']}
-        
-        # Assign validation fold based on mapping
-        val_fold = val_mapping[i]
-        data['val'] = f"{dataset_path}/MSLesSeg-Dataset-a/fold{val_fold}/images"
-        
-        # Append the training data for all folds except the validation fold
-        for j in range(1, k + 1):
-            if j != val_fold:
-                data['train'].append(f"{dataset_path}/MSLesSeg-Dataset-a/fold{j}/images")
-        
-        # Append this iteration's configuration to the list
-        fold_configs.append(data)
-    
-    return fold_configs
-    

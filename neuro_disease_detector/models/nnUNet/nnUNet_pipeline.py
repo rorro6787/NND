@@ -153,8 +153,26 @@ class nnUNet:
         and writes the results to a CSV file.
 
         Args:
-            csv_path (str): 
-                The path to the CSV file where results will be written.
+            self.nnUNet_datapath (str):
+                The path to the nnUNet dataset.
+
+            self.val_results (str):
+                The path to the validation results.
+
+            self.test_results (str):
+                The path to the test results.
+            
+            self.configuration (Configuration):
+                The configuration used for training.
+
+            self.fold (Fold):
+                The fold used for training.
+
+            self.nnUNet_preprocessed (str):
+                The path to the preprocessed data directory.
+
+            self.id (str):
+                The ID of the dataset.
 
         Steps:
             1. Downloads the dataset from the cloud.
@@ -193,8 +211,8 @@ class nnUNet:
         _remove_files(self.test_results)
 
         if self.configuration == Configuration.FULL_3D and self.fold == Fold.FOLD_5:
-            _remove_folder(self.nnUNet_datapath)
-            _remove_folder(f"{self.nnUNet_preprocessed}/Dataset{self.dataset_id}_MSLesSeg")
+            shutil.rmtree(self.nnUNet_datapath)
+            shutil.rmtree(f"{self.nnUNet_preprocessed}/Dataset{self.dataset_id}_MSLesSeg")
 
     def write_results(self, csv_path: str) -> None:
         """
@@ -592,8 +610,3 @@ def _remove_files(folder_path: str):
     for file in os.listdir(folder_path):
         if file.startswith("BRATS_"):
             os.remove(f"{folder_path}/{file}")
-
-def _remove_folder(folder_path):
-    """Deletes the specified folder and all its contents if it exists."""
-    if os.path.exists(folder_path):
-        shutil.rmtree(folder_path)

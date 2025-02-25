@@ -8,19 +8,6 @@ def load_nifti_image(file_path: str) -> np.ndarray:
 
     return nib.load(file_path).get_fdata()
 
-def load_nifti_image_tensor(file_path: str) -> np.ndarray:
-    """Loads a NIfTI (.nii) file and returns its 3D image data as a PyTorch tensor."""
-
-    # Obtain image data as a 3D numpy array
-    volume = load_nifti_image(file_path)
-
-    # Normalize the volume to the range (0.0, 1.0) and add a RGB channel
-    volume = (volume - volume.min()) / (volume.max() - volume.min())
-    volume_rgb = np.stack([volume]*3, axis=-1)
-
-    # Convert the volume to a PyTorch tensor
-    return torch.tensor(volume_rgb)
-
 def load_nifti_image_bgr(file_path: str) -> np.ndarray:
     """Loads a NIfTI (.nii) file and returns its 3D image data as a BGR NumPy array."""
 

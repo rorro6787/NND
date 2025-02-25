@@ -3,14 +3,14 @@ import os
 from neuro_disease_detector.utils.utils_dataset import download_dataset_from_cloud
 from neuro_disease_detector.models.yolo.validation_consensus import YoloFoldValidator
 from neuro_disease_detector.models.yolo.process_dataset import process_dataset
-from neuro_disease_detector.models.yolo.train_augm import train_yolo_folds
-from neuro_disease_detector.models.yolo.__init__ import YoloModel
+from neuro_disease_detector.models.yolo.train_augm import YoloFoldTrainer
+from neuro_disease_detector.models.yolo.__init__ import YoloModel, Trainer, Validator
 from neuro_disease_detector.logger import get_logger
 
 logger = get_logger(__name__)
 cwd = os.getcwd()
 
-def yolo_init(yolo_model: YoloModel, id: str, consensus_threshold: int = 2) -> None:
+def yolo_init(id: str, yolo_model: YoloModel, trainer: Trainer, validator: Validator, consensus_threshold: int = 2) -> None:
     """
     Initialize the YOLO dataset processing pipeline.
 
@@ -44,7 +44,8 @@ def yolo_init(yolo_model: YoloModel, id: str, consensus_threshold: int = 2) -> N
     )
     
     logger.info(f"Training yolo model for...")
-    # train_path = train_yolo_folds(id, yolo_model, cwd)
+    yolo_fold_trainer = YoloFoldTrainer(id, yolo_model, trainer, cwd)
+    yolo_fold_trainer.train_k_fold()
     
     logger.info("Evaluating test results...")
 
@@ -59,7 +60,9 @@ def yolo_init(yolo_model: YoloModel, id: str, consensus_threshold: int = 2) -> N
     logger.info("yolo pipeline completed.")
     
 if __name__ == "__main__":
+    id = "000"
     yolo_model = YoloModel.V11M_SEG
-    consensus_threshold = 2
-    id = "025"
-    yolo_init(yolo_model, id, consensus_threshold=consensus_threshold)
+    trainer = Trainer.FULL_3D
+    validator = Validator.A2D
+    
+    yolo_init(id, yolo_model, trainer, validator, consensus_threshold=2)
