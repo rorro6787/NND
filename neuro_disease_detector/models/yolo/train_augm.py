@@ -42,12 +42,6 @@ class YoloFoldTrainer:
         
         train_k_fold(self):
             Trains the YOLO model for image segmentation using a specified dataset with a 5-fold cross-validation setup.
-
-        _train_yolo(self, yaml_file_path: str, fold: str):
-            Trains a YOLO model for image segmentation using a specified dataset.
-
-        _generate_yaml_files(self) -> list:
-            Generate YAML configuration files for each fold in a 5-fold cross-validation setup.
     """
     
     def __init__(self, id: str, yolo_model: YoloModel, trainer: Trainer, dataset_path: str) -> None:

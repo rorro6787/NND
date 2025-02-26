@@ -46,11 +46,12 @@ def yolo_init(id: str, yolo_model: YoloModel, trainer: Trainer, validator: Valid
     logger.info(f"Training yolo model for...")
     yolo_fold_trainer = YoloFoldTrainer(id, yolo_model, trainer, cwd)
     yolo_fold_trainer.train_k_fold()
+    train_path = yolo_fold_trainer.train_path
     
     logger.info("Evaluating test results...")
 
     """
-    yolo_fold_validator = YoloFoldValidator(train_path, cwd, consensus_threshold=consensus_threshold)
+    yolo_fold_validator = YoloFoldValidator(train_path, validator, cwd, consensus_threshold=consensus_threshold)
     yolo_fold_validator.validate_all_folds()
     
     print(yolo_fold_validator.cm_fold_epoch)
