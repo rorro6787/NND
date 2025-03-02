@@ -280,6 +280,7 @@ class nnUNet:
         data = _write_overall(csv_path, TEST_RESULTS_PATH, ALGORITHM, "GlovalT", EXECUTON_ID)
 
         brats_i = BRATS_INITIAL_INDEX
+        patient_timepoint = {}
         for instance_metrics in data["metric_per_case"]:
             # Write the results for each instance to the CSV file
             instance_metrics = instance_metrics["metrics"]["1"]
@@ -288,7 +289,8 @@ class nnUNet:
 
             # Get the patient and timepoint IDs for the current test instance
             patient_id = get_patient_by_test_id(brats_i)
-            timepoint_id = get_timepoints_patient(patient_id)
+            patient_timepoint[patient_id] = patient_timepoint.get(patient_id, 0) + 1
+            timepoint_id = patient_timepoint[patient_id]
 
             # Write the results to the CSV file
             write_results_csv(csv_path, ALGORITHM, f"P{patient_id}T{timepoint_id}", "DSC", EXECUTON_ID, dsc)

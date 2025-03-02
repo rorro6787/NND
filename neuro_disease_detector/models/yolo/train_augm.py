@@ -8,8 +8,6 @@ from neuro_disease_detector.logger import get_logger
 logger = get_logger(__name__)
 cwd = os.getcwd()
 
-
-    
 class YoloFoldTrainer:
     """
     Class for training a YOLO model for image segmentation using a specified dataset with a 5-fold cross-validation setup.
@@ -42,6 +40,12 @@ class YoloFoldTrainer:
         
         train_k_fold(self):
             Trains the YOLO model for image segmentation using a specified dataset with a 5-fold cross-validation setup.
+
+        _train_yolo(self, yaml_file_path: str, fold: str):
+            Trains a YOLO model for image segmentation using a specified dataset.
+
+        _generate_yaml_files(self) -> list:
+            Generate YAML configuration files for each fold in a 5-fold cross-validation setup.
     """
     
     def __init__(self, id: str, yolo_model: YoloModel, trainer: Trainer, dataset_path: str) -> None:
@@ -136,7 +140,14 @@ class YoloFoldTrainer:
 
         if self.trainer == Trainer.FULL_3D or self.trainer == Trainer.SIMPLE_CORONAL:
             params["imgsz"] = 256
-
+        
+        """
+        if fold == "fold1" and self.id == "001" and self.trainer == Trainer.SIMPLE_AXIAL:
+            params["resume"] = True
+            model = YOLO("/home/rorro6787/Escritorio/Universidad/4Carrera/TFG/neurodegenerative-disease-detector/neuro_disease_detector/models/yolo/yolo_trainings/001/yolo11x-seg/axial/fold1/weights/last.pt", task="segmentation")
+        else:
+        """
+        
         # Train the model with the specified dataset and parameters
         model = YOLO(self.yolo_model, task="segmentation")
         model.train(
@@ -206,7 +217,7 @@ def _train_parameters(**train_params) -> dict:
 
     # Define the training parameters for the YOLO model
     train_parameters = {
-        "epochs" : 75,                   # Number of training epochs
+        "epochs" : 100,                  # Number of training epochs
         "imgsz" : 192,                   # Image size (width and height)
         "batch" : -1,                    # Batch size, -1 for default
         "device" : 0,                    # Device ID for training (0 for first GPU)

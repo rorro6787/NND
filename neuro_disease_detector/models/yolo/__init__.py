@@ -14,11 +14,14 @@ class Trainer(Enum):
     FULL_3D = "3d_fullres"
 
 class Validator(Enum):
-    CONS3D = "consensus3d"
-    CONS2D = "consensus2d"
-    AXIAL = "axial"
-    SAGITTAL = "sagittal"
-    CORONAL = "coronal"
+    Cs3D = "Cs3D"
+    A3D = "A3D"
+    S3D = "S3D"
+    C3D = "C3D"
+    Cs2D = "Cs2D"
+    A2D = "A2D"
+    S2D = "S2D"
+    C2D = "C2D"
 
 class Metrics(Enum):
     RECALL = "Recall"
