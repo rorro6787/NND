@@ -7,7 +7,7 @@ import os
 
 logger = get_logger(__name__)
 
-FOLD_TO_PATIENT = { "fold1": (1, 6), "fold2": (6, 13), "fold3": (13, 20), "fold4": (20, 33), "fold5": (33, 47), "test": (47, 54) }
+FOLD_TO_PATIENT = { "fold1": (1, 7), "fold2": (7, 14), "fold3": (14, 24), "fold4": (24, 41), "fold5": (41, 54) }
 TIMEPOINTS_PATIENT = [3,4,4,3,2,3,2,2,3,2,2,2,4,4,1,1,1,1,4,3,1,1,2,1,1,1,1,2,1,0,2,1,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,1,1,1,1,1,2]                      
 
 def get_timepoints_patient(pd: int) -> int:
@@ -36,8 +36,11 @@ def get_patients_split(split: str) -> tuple:
 def split_assign(pd: int) -> str:
     """Assign a patient to a fold based on the patient ID."""
 
+    if pd <= 0 or pd >= 54:
+        raise ValueError(f"Invalid patient ID: {pd}")
+    
     # Define the boundaries for each fold
-    folds = [FOLD_TO_PATIENT[f"fold{i}"][0] for i in range(1, 6)] + [FOLD_TO_PATIENT["test"][0]]
+    folds = [FOLD_TO_PATIENT[f"fold{i}"][0] for i in range(1, 6)] 
 
     # Assign the patient to a fold based on their ID
     for i, start in enumerate(folds[:-1]):
@@ -45,7 +48,7 @@ def split_assign(pd: int) -> str:
         if pd >= start and pd < folds[i + 1]:
             return f"fold{i + 1}"
     # If the patient ID is not within the range of any fold, return "test"
-    return "Test"
+    return "fold5"
 
 def download_dataset_from_cloud(folder_name: str, url: str, extract_folder: bool = True) -> None:
     """Downloads and extracts a dataset from a cloud storage URL."""
