@@ -62,8 +62,7 @@ def yolo_init(id: str, yolo_model: YoloModel, trainer: Trainer, validator: Valid
 if __name__ == "__main__":
     yolo_model = YoloModel.V11X_SEG
     validator = Validator.A2D
-    trainer = Trainer.SIMPLE_CORONAL
-
+    trainer = Trainer.FULL_3D
     for i in range(5):
         id = f"00{i}"
         yolo_init(id, yolo_model, trainer, validator, consensus_threshold=2)

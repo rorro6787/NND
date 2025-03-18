@@ -1,7 +1,6 @@
 import nibabel as nib
 import numpy as np
 import cv2
-import torch
 
 def load_nifti_image(file_path: str) -> np.ndarray:
     """Loads a NIfTI (.nii) file and returns its 3D image data as a NumPy array."""

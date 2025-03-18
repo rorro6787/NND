@@ -386,6 +386,7 @@ class nnUNet:
         os.makedirs(self.test_results, exist_ok=True)
         test_path = f"{self.nnUNet_datapath}/imagesTs"
 
+        # WHEN WE DO TEST WITH NNUNET, WE HAVE TO TAKE A LOOK IF WE CAN SEPARATE IN FLAIR, T1, T2
         # Define the command to perform inference on the test data
         command = ["nnUNetv2_predict", 
                 "-i", test_path, 

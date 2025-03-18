@@ -10,7 +10,7 @@ nnUNet_raw/
 nnUNet_preprocessed/
 nnUNet_results/
 yolo_trainings/
-
+*.out
 pruebas_3D/
 nnu_net/
 

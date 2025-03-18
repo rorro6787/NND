@@ -142,9 +142,9 @@ class YoloFoldTrainer:
             params["imgsz"] = 256
         
         """
-        if fold == "fold1" and self.id == "001" and self.trainer == Trainer.SIMPLE_AXIAL:
+        if fold == "fold1" and self.id == "001" and self.trainer == Trainer.FULL_3D
             params["resume"] = True
-            model = YOLO("/home/rorro6787/Escritorio/Universidad/4Carrera/TFG/neurodegenerative-disease-detector/neuro_disease_detector/models/yolo/yolo_trainings/001/yolo11x-seg/axial/fold1/weights/last.pt", task="segmentation")
+            model = YOLO("/home/rodrigocarreira/MRI-Neurodegenerative-Disease-Detection/neuro_disease_detector/models/yolo/yolo_trainings/001/yolo11x-seg/3d_fullres/fold1/weights/last.pt", task="segmentation")
         else:
         """
         
@@ -219,7 +219,7 @@ def _train_parameters(**train_params) -> dict:
     train_parameters = {
         "epochs" : 100,                  # Number of training epochs
         "imgsz" : 192,                   # Image size (width and height)
-        "batch" : -1,                    # Batch size, -1 for default
+        "batch" : 24,                    # Batch size, -1 for default
         "device" : 0,                    # Device ID for training (0 for first GPU)
         "fraction" : 1,                  # Fraction of dataset for training
         "plots" : True,                  # Generate training plots
