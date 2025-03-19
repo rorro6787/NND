@@ -200,19 +200,19 @@ class nnUNet:
         self.create_nnu_dataset()  
         self.configure_environment()   
         self.process_dataset()
-        self.train_nnUNet()
-        self.inference_test()     
-        self.evaluate_test_results()
-        self.write_results(csv_path)
+        #self.train_nnUNet()
+        #self.inference_test()     
+        #self.evaluate_test_results()
+        #self.write_results(csv_path)
         
-        _remove_files(f"{self.nnUNet_datapath}/imagesTr")
-        _remove_files(f"{self.nnUNet_datapath}/labelsTr") 
-        _remove_files(self.val_results) 
-        _remove_files(self.test_results)
+        #_remove_files(f"{self.nnUNet_datapath}/imagesTr")
+        #_remove_files(f"{self.nnUNet_datapath}/labelsTr") 
+        #_remove_files(self.val_results) 
+        #_remove_files(self.test_results)
 
-        if self.configuration == Configuration.FULL_3D and self.fold == Fold.FOLD_5:
-            shutil.rmtree(self.nnUNet_datapath)
-            shutil.rmtree(f"{self.nnUNet_preprocessed}/Dataset{self.dataset_id}_MSLesSeg")
+        #if self.configuration == Configuration.FULL_3D and self.fold == Fold.FOLD_5:
+        #    shutil.rmtree(self.nnUNet_datapath)
+        #    shutil.rmtree(f"{self.nnUNet_preprocessed}/Dataset{self.dataset_id}_MSLesSeg")
 
     def write_results(self, csv_path: str) -> None:
         """
@@ -613,3 +613,10 @@ def _remove_files(folder_path: str):
     for file in os.listdir(folder_path):
         if file.startswith("BRATS_"):
             os.remove(f"{folder_path}/{file}")
+        
+
+
+if __name__ == "__main__":
+    import shutil
+
+    shutil.make_archive('nnu_net', 'zip', '/home/rodrigocarreira/MRI-Neurodegenerative-Disease-Detection/neuro_disease_detector/models/nnUNet/nnu_net')
