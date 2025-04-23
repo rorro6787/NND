@@ -268,7 +268,7 @@ def yolo_3d_prediction(volume: np.ndarray, yolo_model: YOLO) -> np.ndarray:
     # Return the predictions for all three axes as a tuple.
     return predictions_x, predictions_y, predictions_z
 
-def _yolo_3d_prediction(yolo_model: YOLO, slices: list, batch_size: int = 128) -> list:
+def _yolo_3d_prediction(yolo_model: YOLO, slices: list, batch_size: int = 1) -> list:
     """
     Perform 3D predictions using a YOLO model on a list of 2D image slices.
 
@@ -303,3 +303,16 @@ def _yolo_3d_prediction(yolo_model: YOLO, slices: list, batch_size: int = 128) -
 
     # Return the final list of predictions for all slices.
     return predictions
+
+if __name__ == "__main__":
+    # Example usage of the YoloFoldValidator class.
+    validator = YoloFoldValidator(
+        folds_directory="/home/rodrigocarreira/MRI-Neurodegenerative-Disease-Detection/neuro_disease_detector/models/yolo/yolo_trainings/000/yolo11x-seg/3d_fullres",
+        data_folder="/home/rodrigocarreira/MRI-Neurodegenerative-Disease-Detection/neuro_disease_detector/models/yolo",
+        consensus_threshold=2
+    )
+    
+    # Validate all folds and print the results.
+    validator.validate_all_folds()
+    print(validator.cm_fold_epoch)
+    print(validator.metrics_fold_epoch)

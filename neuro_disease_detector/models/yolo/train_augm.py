@@ -141,15 +141,15 @@ class YoloFoldTrainer:
         if self.trainer == Trainer.FULL_3D or self.trainer == Trainer.SIMPLE_CORONAL:
             params["imgsz"] = 256
         
-        """
-        if fold == "fold1" and self.id == "001" and self.trainer == Trainer.FULL_3D
+        
+        if fold == "fold1" and self.id == "000" and self.trainer == Trainer.FULL_3D:
             params["resume"] = True
-            model = YOLO("/home/rodrigocarreira/MRI-Neurodegenerative-Disease-Detection/neuro_disease_detector/models/yolo/yolo_trainings/001/yolo11x-seg/3d_fullres/fold1/weights/last.pt", task="segmentation")
+            model = YOLO("/home/rodrigocarreira/MRI-Neurodegenerative-Disease-Detection/neuro_disease_detector/models/yolo/yolo_trainings/000/yolo11x-seg/3d_fullres/fold1/weights/last.pt", task="segmentation")
         else:
-        """
+        
         
         # Train the model with the specified dataset and parameters
-        model = YOLO(self.yolo_model, task="segmentation")
+            model = YOLO(self.yolo_model, task="segmentation")
         model.train(
             data=yaml_file_path,           # Path to the YAML file with data configuration
             project=self.train_path,       # Project directory for results

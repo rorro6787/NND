@@ -8,7 +8,7 @@ import os
 logger = get_logger(__name__)
 
 FOLD_TO_PATIENT = { "fold1": (1, 7), "fold2": (7, 14), "fold3": (14, 24), "fold4": (24, 41), "fold5": (41, 54) }
-TIMEPOINTS_PATIENT = [3,4,4,3,2,3,2,2,3,2,2,2,4,4,1,1,1,1,4,3,1,1,2,1,1,1,1,2,1,0,2,1,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,1,1,1,1,1,2]                    
+TIMEPOINTS_PATIENT = [3,4,4,3,2,3,2,2,3,2,2,2,4,4,1,1,1,1,4,3,1,1,2,1,1,1,1,2,1,0,2,1,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,1,1,1,1,1,2]                      
 
 def get_timepoints_patient(pd: int) -> int:
     """Returns the timepoints for a given patient."""
@@ -93,7 +93,3 @@ def write_results_csv(csv_path: str, algorithm, instance, metric_name, execution
 
     # Save the updated data to the CSV file
     data.to_csv(csv_path, index=False)
-
-
-if __name__ == "__main__":
-    print(get_patient_by_test_id(92))
