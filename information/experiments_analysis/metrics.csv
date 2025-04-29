@@ -1,0 +1,14 @@
+MetricName,Maximize
+DSC,True
+FN,False
+FNR,False
+FP,False
+FPR,False
+Iou,True
+NPV,True
+TN,True
+TP,True
+acc,True
+precision,True
+recall,True
+specificity,True
