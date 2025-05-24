@@ -1,100 +1,95 @@
-import nibabel as nib
-import numpy as np
-import cv2
+from neuro_disease_detector.logger import get_logger
 
-def load_nifti_image(file_path: str) -> np.ndarray:
-    """
-    Loads a NIfTI (.nii) file and returns its 3D image data as a NumPy array.
+import pandas as pd
+import zipfile
+import gdown
+import os
 
-    Parameters:
-    file_path (str): Path to the NIfTI file.
+logger = get_logger(__name__)
 
-    Returns:
-    numpy.ndarray: 3D array of the image data.
-    """
+FOLD_TO_PATIENT = { "fold1": (1, 7), "fold2": (7, 14), "fold3": (14, 24), "fold4": (24, 41), "fold5": (41, 54) }
+TIMEPOINTS_PATIENT = [3,4,4,3,2,3,2,2,3,2,2,2,4,4,1,1,1,1,4,3,1,1,2,1,1,1,1,2,1,0,2,1,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,1,1,1,1,1,2]                      
 
-    # Load the NIfTI file
-    img = nib.load(file_path)
+def get_timepoints_patient(pd: int) -> int:
+    """Returns the timepoints for a given patient."""
+    return TIMEPOINTS_PATIENT[pd-1]
 
-    # Obtain image data as a 3D numpy array
-    return img.get_fdata()
+def get_patient_by_test_id(test_id: int | str) -> str:
+    """ Given a test ID and a list with the number of tests per patient, return the patient to which the test belongs."""
+    
+    # Convert the test ID to an integer
+    test_id = int(test_id)
+    current_id = 0
 
-def load_nifti_image_bgr(file_path: str) -> np.ndarray:
-    """
-    Loads a NIfTI (.nii) file and returns its 3D image data as a NumPy array.
+    # Iterate over the number of tests per patient
+    for i, num_tests in enumerate(TIMEPOINTS_PATIENT):
+        current_id += num_tests
+        if test_id <= current_id:
+            return i + 1
+    # If the test ID is not found, return -1
+    return -1
 
-    Parameters:
-    file_path (str): Path to the NIfTI file.
+def get_patients_split(split: str) -> tuple:
+    """Returns the list of patients for a given split (e.g., train, test)."""
+    return FOLD_TO_PATIENT[split]
 
-    Returns:
-    numpy.ndarray: 3D array of the image data.
-    """
+def split_assign(pd: int) -> str:
+    """Assign a patient to a fold based on the patient ID."""
 
-    # Load the NIfTI file
-    img = nib.load(file_path)
+    if pd <= 0 or pd >= 54:
+        raise ValueError(f"Invalid patient ID: {pd}")
+    
+    # Define the boundaries for each fold
+    folds = [FOLD_TO_PATIENT[f"fold{i}"][0] for i in range(1, 6)] 
 
-    # Obtain image data as a 3D numpy array
-    volume = img.get_fdata()
+    # Assign the patient to a fold based on their ID
+    for i, start in enumerate(folds[:-1]):
+        # If the patient ID is within the range of the current fold, return the fold
+        if pd >= start and pd < folds[i + 1]:
+            return f"fold{i + 1}"
+    # If the patient ID is not within the range of any fold, return "test"
+    return "fold5"
 
-    # Normalize the volume to the range [0, 255]
-    volume_uint8 = volume.astype(np.uint8)
+def download_dataset_from_cloud(folder_name: str, url: str, extract_folder: bool = True) -> None:
+    """Downloads and extracts a dataset from a cloud storage URL."""
 
-    # Add a BGR channel to the 3D volume
-    volume_bgr = np.stack([volume_uint8]*3, axis=-1)
+    logger.info(f"Downloading {folder_name} for yolo/nnUNet pipeline...")
+    if os.path.exists(folder_name):
+        return
+    
+    # Name of the ZIP file to save locally
+    dataset_zip = f"{folder_name}.zip"
 
-    return volume_bgr
+    # Download the dataset from the cloud storage URL
+    gdown.download(url, dataset_zip, quiet=False)
+    
+    # Extract the dataset from the ZIP file
+    with zipfile.ZipFile(dataset_zip, "r") as zip_ref:
+        if extract_folder:
+            zip_ref.extractall(folder_name)
+        else:
+            zip_ref.extractall()
 
-def extract_contours_mask(mask: np.ndarray) -> str:
-    """
-    Extracts the normalized coordinates of contours from a binary mask image.
+    # Remove the ZIP file after extraction
+    os.remove(dataset_zip)
 
-    Parameters:
-    - mask: np.ndarray
-        A 2D NumPy array representing the black and white image, where white pixels
-        have a value of 255 and black pixels have a value of 0.
+def write_results_csv(csv_path: str, algorithm, instance, metric_name, execution_id, metric_value):
+    """Write the results of an algorithm execution to a CSV file."""
 
-    Returns:
-    - str:
-        A string containing the normalized coordinates of contours found in the image in the format:
-        "0 <x_center> <y_center> <width> <height> <x1> <y1> <x2> <y2> ... <xn> <yn>"
-        for each contour. Each coordinate is normalized to fall between 0 and 1,
-        and the values are formatted to six decimal places.
-    """
+    # Create a new row with the algorithm, instance, metric name, execution ID, and metric value
+    new_row = pd.DataFrame([{
+        "Algorithm": algorithm,
+        "Instance": instance,
+        "MetricName": metric_name,
+        "ExecutionId": int(execution_id), 
+        "MetricValue": metric_value,
+    }])
 
-    # Convert mask to uint8 to ensure proper format for contour extraction
-    mask = mask.astype(np.uint8)
+    # Create a new CSV file if it doesn't exist
+    data = pd.read_csv(csv_path) if os.path.exists(csv_path) else pd.DataFrame(columns=new_row.columns)
 
-    # Find contours in the binary mask image
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Append the new row to the existing data
+    data = pd.concat([data.dropna(axis=1, how='all'), new_row], ignore_index=True)
 
-    # Get the dimensions of the mask image
-    mask_height, mask_width = mask.shape
-
-    # Initialize a string to hold the annotations
-    annotations = ""
-
-    # Iterate over each contour found in the mask
-    for contour in contours:
-        # Get the bounding box of each object
-        x, y, w, h = cv2.boundingRect(contour)
-
-        # Calculate the center of the bounding box
-        x_center = (x + w / 2) / mask_width
-        y_center = (y + h / 2) / mask_height
-
-        # Normalize the width and height
-        width = w / mask_width
-        height = h / mask_height
-
-        # Write the class (assuming class 0) and the bounding box
-        annotations += f"0 {x_center} {y_center} {width} {height}"
-
-        # Add the points of the contour (normalized)
-        for point in contour:
-            px, py = point[0]
-            annotations += f" {px/mask_width} {py/mask_height}"
-
-        # Add a new line for each object
-        annotations += "\n"
-
-    return annotations
+    # Save the updated data to the CSV file
+    data.to_csv(csv_path, index=False)
