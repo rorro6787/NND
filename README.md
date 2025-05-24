@@ -13,6 +13,8 @@
   </p>
 </div>
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/rorro6787/neurodegenerative-disease-detector)
+
 The Final Degree Project (TFG) will consist of the design and development of an advanced system for medical image analysis, focused on detecting brain pathologies in patients using magnetic resonance imaging (MRI) scans. The main objective of the system is to provide healthcare professionals with an effective tool to accurately and quickly identify and classify brain lesions.
 
 An algorithm will be implemented using the YOLOv8 model, trained with the dataset defined at this link:  
