@@ -1,50 +1,79 @@
-from neuro_disease_detector.models.nnUNet.__init__ import Configuration, Fold, Trainer
-from neuro_disease_detector.models.nnUNet.nnUNet_pipeline import nnUNet
-
-import pandas as pd
 import os
-from SAES.html.html_generator import notebook_no_fronts, notebook_bayesian
-from SAES.latex_generation.stats_table import MeanMedian
-from SAES.latex_generation.stats_table import Friedman
-from SAES.latex_generation.stats_table import WilcoxonPivot
-from SAES.latex_generation.stats_table import Wilcoxon 
+import sys
+from neuro_disease_detector.models.nnUNet.__init__ import Configuration as NN_CONFIGURATION, Fold as NN_Fold, Trainer as NN_Trainer
+from neuro_disease_detector.models.nnUNet.nnUNet_pipeline import nnUNet
+from neuro_disease_detector.models.yolo.yolo_pipeline import yolo_init
+from neuro_disease_detector.models.yolo.__init__ import YoloModel, Trainer as Yolo_Trainer, Validator as Yolo_Validator
 
-def train_nnUNet_models():
-    trainer = Trainer.EPOCHS_50
-    csv_path = f"{os.getcwd()}/data.csv"
-    
+# ------------------------------------------------------------------------------
+# USER CONFIGURATION (modify these as needed)
+# ------------------------------------------------------------------------------
+
+# nnUNet settings
+DATASET_ID        = "024"                           # e.g. "024"
+NNUNET_CONFIG     = NN_CONFIGURATION.FULL_3D       # e.g. FULL_3D or any other Configuration
+NNUNET_TRAINER    = NN_Trainer.EPOCHS_100           # e.g. EPOCHS_100 (must match available Trainer enum)
+NNUNET_CSV_PATH   = "nnunet_all_results.csv"        # where to aggregate all nnUNet results
+
+# YOLO settings
+YOLO_MODEL        = YoloModel.V11X_SEG              # e.g. the YOLO backbone/version
+YOLO_TRAINER      = Yolo_Trainer.FULL_3D            # e.g. FULL_3D training regimen
+YOLO_VALIDATOR    = Yolo_Validator.A2D              # e.g. single‐plane axial 2D validator
+YOLO_CONSENSUS_T  = 2                               # consensus threshold for YOLO‐validation
+# ------------------------------------------------------------------------------
+
+def run_nnunet_all_folds():
+    """
+    Launch nnUNet training & evaluation for all 5 folds.
+    Results (Dice/IoU) for each fold will be appended into NNUNET_CSV_PATH.
+    """
+    # If the CSV doesn't exist yet, create a header row first
+    if not os.path.isfile(NNUNET_CSV_PATH):
+        with open(NNUNET_CSV_PATH, "w") as f:
+            f.write("Algorithm,Stage,Metric,ExecutionID,Value\n")
+
+    for fold_enum in NN_Fold:
+        print(f"\n--- Starting nnUNet: dataset {DATASET_ID}, config={NNUNET_CONFIG.name}, fold={fold_enum.name} ---\n")
+        # Instantiate nnUNet with the chosen dataset/config/fold/trainer
+        pipeline = nnUNet(
+            dataset_id    = DATASET_ID,
+            configuration = NNUNET_CONFIG,
+            fold          = fold_enum,
+            trainer       = NNUNET_TRAINER,
+        )
+        # Call execute_pipeline, which will download data, preprocess, train, infer, evaluate, and append to CSV
+        pipeline.execute_pipeline(NNUNET_CSV_PATH)
+        print(f"--- Completed nnUNet fold {fold_enum.name} ---\n")
+
+
+def run_yolo_all_folds():
+    """
+    Launch YOLO k‐fold training & validation for fold‐IDs "000" to "004".
+    """
     for i in range(5):
-        dataset_id = f"00{i}"     
-        for configuration in Configuration:
-            for fold in Fold:
-                #nnUNet(dataset_id, configuration, fold, trainer).execute_pipeline(csv_path)   
-                nnUNet(dataset_id, configuration, fold, trainer).write_results(csv_path)
+        fold_id = f"{i:03d}"  # "000", "001", "002", "003", "004"
+        print(f"\n--- Starting YOLO: fold_id={fold_id}, model={YOLO_MODEL.name} ---\n")
 
-def create_results_html(data: str, metrics: str) -> None:
-    metrics_list = pd.read_csv(metrics)["MetricName"].unique().tolist()
-    for metric in metrics_list:
-        notebook_no_fronts(data, metrics, metric, os.getcwd())
-        os.rename("no_fronts.html", f"{metric}.html")
+        # yolo_init will:
+        # 1. Ensure raw dataset is downloaded
+        # 2. Ensure YOLO‐formatted dataset is present (either generates or downloads)
+        # 3. Train k‐fold YOLO (creating weights under ./yolo_trainings/{fold_id}/fold_{1..5}/weights)
+        # 4. Validate each fold and print confusion matrices & metrics
+        yolo_init(
+            fold_id             = fold_id,
+            yolo_model          = YOLO_MODEL,
+            trainer             = YOLO_TRAINER,
+            validator           = YOLO_VALIDATOR,
+            consensus_threshold = YOLO_CONSENSUS_T,
+        )
+        print(f"--- Completed YOLO fold {fold_id} ---\n")
 
-        notebook_bayesian(data, metrics, metric, "nnUNet3D", f"{os.getcwd()}/outputs")
-        os.rename("bayesian.html", f"{metric}_bayesian.html")
-        
-        # Create the LaTeX tables
-        mean_median = MeanMedian(data, metrics, metric)
-        friedman = Friedman(data, metrics, metric)
-        wilcoxon_pivot = WilcoxonPivot(data, metrics, metric)
-        wilcoxon = Wilcoxon(data, metrics, metric)
-
-        # Save the LaTeX tables on disk
-        mean_median.save(os.getcwd())
-        friedman.save(os.getcwd())
-        wilcoxon_pivot.save(os.getcwd())
-        wilcoxon.save(os.getcwd())
-        
 
 if __name__ == "__main__":
-    data = "outputs/data.csv"
-    metrics = "outputs/metrics.csv"
-    create_results_html(data, metrics)
-    
-    
+    # 1) Run nnUNet for all folds
+    run_nnunet_all_folds()
+
+    # 2) Run YOLO for all fold‐IDs
+    run_yolo_all_folds()
+
+    print("\nAll trainings finished successfully.\n")

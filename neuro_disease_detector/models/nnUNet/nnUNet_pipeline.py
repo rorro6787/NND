@@ -1,94 +1,15 @@
 
+from neuro_disease_detector.models.nnUNet.__init__ import Configuration, Fold, Trainer
+from neuro_disease_detector.utils.utils_dataset import download_dataset_from_cloud
+from neuro_disease_detector.utils.utils_dataset import get_patient_by_test_id
+from neuro_disease_detector.utils.utils_dataset import get_timepoints_patient
+from neuro_disease_detector.utils.utils_dataset import write_results_csv
+from neuro_disease_detector.utils.utils_dataset import split_assign
+from neuro_disease_detector.__init__ import CONFIG_NNUNET_SPLIT
+from neuro_disease_detector.__init__ import CONFIG_NNUNET
+from neuro_disease_detector.logger import get_logger
 
-import subprocess, shutil, json, os, gdown, zipfile
-from enum import Enum
-FOLD_TO_PATIENT = { "fold1": (1, 7), "fold2": (7, 14), "fold3": (14, 24), "fold4": (24, 41), "fold5": (41, 54) }
-TIMEPOINTS_PATIENT = [3,4,4,3,2,3,2,2,3,2,2,2,4,4,1,1,1,1,4,3,1,1,2,1,1,1,1,2,1,0,2,1,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,1,1,1,1,1,2]                      
-
-def get_timepoints_patient(pd: int) -> int:
-    """Returns the timepoints for a given patient."""
-    return TIMEPOINTS_PATIENT[pd-1]
-
-def get_patient_by_test_id(test_id: int | str) -> str:
-    """ Given a test ID and a list with the number of tests per patient, return the patient to which the test belongs."""
-    
-    # Convert the test ID to an integer
-    test_id = int(test_id)
-    current_id = 0
-
-    # Iterate over the number of tests per patient
-    for i, num_tests in enumerate(TIMEPOINTS_PATIENT):
-        current_id += num_tests
-        if test_id <= current_id:
-            return i + 1
-    # If the test ID is not found, return -1
-    return -1
-
-def get_patients_split(split: str) -> tuple:
-    """Returns the list of patients for a given split (e.g., train, test)."""
-    return FOLD_TO_PATIENT[split]
-
-def split_assign(pd: int) -> str:
-    """Assign a patient to a fold based on the patient ID."""
-
-    if pd <= 0 or pd >= 54:
-        raise ValueError(f"Invalid patient ID: {pd}")
-    
-    # Define the boundaries for each fold
-    folds = [FOLD_TO_PATIENT[f"fold{i}"][0] for i in range(1, 6)] 
-
-    # Assign the patient to a fold based on their ID
-    for i, start in enumerate(folds[:-1]):
-        # If the patient ID is within the range of the current fold, return the fold
-        if pd >= start and pd < folds[i + 1]:
-            return f"fold{i + 1}"
-    # If the patient ID is not within the range of any fold, return "test"
-    return "fold5"
-def download_dataset_from_cloud(folder_name: str, url: str, extract_folder: bool = True) -> None:
-    """Downloads and extracts a dataset from a cloud storage URL."""
-
-    if os.path.exists(folder_name):
-        return
-    
-    # Name of the ZIP file to save locally
-    dataset_zip = f"{folder_name}.zip"
-
-    # Download the dataset from the cloud storage URL
-    gdown.download(url, dataset_zip, quiet=False)
-    
-    # Extract the dataset from the ZIP file
-    with zipfile.ZipFile(dataset_zip, "r") as zip_ref:
-        if extract_folder:
-            zip_ref.extractall(folder_name)
-        else:
-            zip_ref.extractall()
-
-    # Remove the ZIP file after extraction
-    os.remove(dataset_zip)
-class Trainer(Enum):
-    EPOCHS_1 = "nnUNetTrainer_1epoch"
-    EPOCHS_5 = "nnUNetTrainer_5epochs"
-    EPOCHS_10 = "nnUNetTrainer_10epochs"
-    EPOCHS_20 = "nnUNetTrainer_20epochs"
-    EPOCHS_50 = "nnUNetTrainer_50epochs"
-    EPOCHS_100 = "nnUNetTrainer_100epochs"
-    EPOCHS_250 = "nnUNetTrainer_250epochs"
-    EPOCHS_500 = "nnUNetTrainer_500epochs"
-    EPOCHS_750 = "nnUNetTrainer_750epochs"
-    EPOCHS_2000 = "nnUNetTrainer_2000epochs"
-    EPOCHS_4000 = "nnUNetTrainer_4000epochs"
-    EPOCHS_8000 = "nnUNetTrainer_8000epochs"
-
-class Fold(Enum):
-    FOLD_1 = "0"
-    FOLD_2 = "1"
-    FOLD_3 = "2"
-    FOLD_4 = "3"
-    FOLD_5 = "4"
-
-class Configuration(Enum):
-    SIMPLE_2D = "2d"
-    FULL_3D = "3d_fullres"
+import subprocess, shutil, json, os
 
 cwd = os.getcwd()
 
@@ -224,8 +145,386 @@ class nnUNet:
         self.val_results = f"{self.train_results}/validation"
         self.test_results = f"{self.train_results}/test"
 
+        self.logger = get_logger(__name__)
 
-    
+    def execute_pipeline(self, csv_path: str):
+        """
+        Initializes the nnUNet environment, processes the dataset, trains the model,
+        and writes the results to a CSV file.
+
+        Args:
+            self.nnUNet_datapath (str):
+                The path to the nnUNet dataset.
+
+            self.val_results (str):
+                The path to the validation results.
+
+            self.test_results (str):
+                The path to the test results.
+            
+            self.configuration (Configuration):
+                The configuration used for training.
+
+            self.fold (Fold):
+                The fold used for training.
+
+            self.nnUNet_preprocessed (str):
+                The path to the preprocessed data directory.
+
+            self.id (str):
+                The ID of the dataset.
+
+        Steps:
+            1. Downloads the dataset from the cloud.
+            2. Prepares the dataset by creating necessary files and directories.
+            3. Configures the environment and preprocesses the dataset.
+            4. Trains the nnUNet model.
+            5. Runs inference and evaluates the results.
+            6. Writes the results to the specified CSV file.
+
+        Returns:
+            None
+        
+        Example:
+            >>> from neuro_disease_detector.models.nnUNet.__init__ import Configuration, Fold, Trainer
+            >>> from neuro_disease_detector.models.nnUNet.nnUNet_pipeline import nnUNet
+            >>>
+            >>> dataset_id = "024"
+            >>> configuration = Configuration.FULL_3D
+            >>> fold = Fold.FOLD_5
+            >>> trainer = Trainer.EPOCHS_100
+            >>> nnUNet = nnUNet(dataset_id, configuration, fold, trainer)
+            >>> nnUNet.init("model_study.csv")
+        """
+
+        self.create_nnu_dataset()  
+        self.configure_environment()   
+        self.process_dataset()
+        self.train_nnUNet()
+        self.inference_test()     
+        self.evaluate_test_results()
+        self.write_results(csv_path)
+        
+        _remove_files(f"{self.nnUNet_datapath}/imagesTr")
+        _remove_files(f"{self.nnUNet_datapath}/labelsTr") 
+        _remove_files(self.val_results) 
+        _remove_files(self.test_results)
+
+        if self.configuration == Configuration.FULL_3D and self.fold == Fold.FOLD_5:
+            shutil.rmtree(self.nnUNet_datapath)
+            shutil.rmtree(f"{self.nnUNet_preprocessed}/Dataset{self.dataset_id}_MSLesSeg")
+
+    def write_results(self, csv_path: str) -> None:
+        """
+        Write the results of the nnUNet model to a CSV file.
+
+        Args:
+            self.test_results (str): 
+                The path to the test results.
+
+            self.configuration (Configuration): 
+                The configuration used for training.
+
+            self.dataset_id (str): 
+                The ID of the dataset.
+
+            csv_path (str): 
+                The path to the CSV file where results will be written.
+        
+        Returns:
+            None
+
+        Example:
+            >>> from neuro_disease_detector.models.nnUNet.__init__ import Configuration, Fold, Trainer
+            >>> from neuro_disease_detector.models.nnUNet.nnUNet_pipeline import nnUNet
+            >>>
+            >>> dataset_id = "024"
+            >>> configuration = Configuration.FULL_3D
+            >>> fold = Fold.FOLD_5
+            >>> trainer = Trainer.EPOCHS_100
+            >>> nnUNet = nnUNet(dataset_id, configuration, fold, trainer)
+            >>> nnUNet.create_nnu_dataset()
+            >>> nnUNet.configure_environment()
+            >>> nnUNet.process_dataset()
+            >>> nnUNet.train_nnUNet()
+            >>> nnUNet.inference_test()
+            >>> nnUNet.evaluate_test_results()
+            >>> nnUNet.write_results("model_study.csv")
+        """
+        
+        def _write_overall(csv_path: str, results_path: str, algorithm: str, overall: str, execution_id: int):
+            """Write the overall results (Val or Test) to the CSV file."""
+
+            with open(results_path, "r") as f:
+                # Load the summary.json file
+                data = json.load(f)
+                foreground_mean = data["foreground_mean"]
+                dsc = foreground_mean["Dice"]
+                iou = foreground_mean["IoU"]
+
+                # Write the overall results to the CSV file
+                write_results_csv(csv_path, algorithm, overall, "DSC", execution_id, dsc)
+                write_results_csv(csv_path, algorithm, overall, "IoU", execution_id, iou)
+
+                # Return the data
+                return data
+                
+        # Define the constants for the results
+        TEST_RESULTS_PATH = f"{self.test_results}/summary.json"
+        VAL_RESULTS_PATH = f"{self.val_results}/summary.json"
+        ALGORITHM = "nnUNet3D" if self.configuration == Configuration.FULL_3D else "nnUNet2D"
+        EXECUTON_ID = int(self.dataset_id) * self.k + int(self.fold.value) + 1
+        BRATS_INITIAL_INDEX = 84
+
+        _ = _write_overall(csv_path, VAL_RESULTS_PATH, ALGORITHM, "GlobalV", EXECUTON_ID)
+        data = _write_overall(csv_path, TEST_RESULTS_PATH, ALGORITHM, "GlovalT", EXECUTON_ID)
+
+        brats_i = BRATS_INITIAL_INDEX
+        patient_timepoint = {}
+        for instance_metrics in data["metric_per_case"]:
+            # Write the results for each instance to the CSV file
+            instance_metrics = instance_metrics["metrics"]["1"]
+            dsc = instance_metrics["Dice"]
+            iou = instance_metrics["IoU"]
+
+            # Get the patient and timepoint IDs for the current test instance
+            patient_id = get_patient_by_test_id(brats_i)
+            patient_timepoint[patient_id] = patient_timepoint.get(patient_id, 0) + 1
+            timepoint_id = patient_timepoint[patient_id]
+
+            # Write the results to the CSV file
+            write_results_csv(csv_path, ALGORITHM, f"P{patient_id}T{timepoint_id}", "DSC", EXECUTON_ID, dsc)
+            write_results_csv(csv_path, ALGORITHM, f"P{patient_id}T{timepoint_id}", "IoU", EXECUTON_ID, iou)
+
+            brats_i += 1
+
+    def evaluate_test_results(self) -> None:
+        """
+        Evaluate the test results using the trained nnUNet model.
+
+        Args:
+            self.test_results (str): 
+                The path to the test results.
+
+        Returns:
+            None
+
+        Example:
+            >>> from neuro_disease_detector.models.nnUNet.__init__ import Configuration, Fold, Trainer
+            >>> from neuro_disease_detector.models.nnUNet.nnUNet_pipeline import nnUNet
+            >>>
+            >>> dataset_id = "024"
+            >>> configuration = Configuration.FULL_3D
+            >>> fold = Fold.FOLD_5
+            >>> trainer = Trainer.EPOCHS_100
+            >>> nnUNet = nnUNet(dataset_id, configuration, fold, trainer)
+            >>> nnUNet.create_nnu_dataset()
+            >>> nnUNet.configure_environment()
+            >>> nnUNet.process_dataset()
+            >>> nnUNet.train_nnUNet()
+            >>> nnUNet.inference_test()
+            >>> nnUNet.evaluate_test_results()
+        """
+
+        self.logger.info("Evaluating test results...")
+        test_path = f"{self.nnUNet_datapath}/labelsTs"
+
+        # Define the command to evaluate the test results
+        command = ["nnUNetv2_evaluate_folder", 
+                test_path,
+                self.test_results, 
+                "-djfile", f"{self.test_results}/dataset.json", 
+                "-pfile", f"{self.test_results}/plans.json"]
+        
+        subprocess.run(command, env=os.environ, check=True)
+        self.logger.info("nnUNet pipeline completed.")
+
+    def inference_test(self) -> None:
+        """
+        Perform inference on the test data using the trained nnUNet model.
+
+        Args:
+            self.test_results (str): 
+                The path to the test results.
+
+            self.nnUNet_datapath (str): 
+                The path to the nnUNet dataset.
+
+            self.dataset_id (str): 
+                The ID of the dataset.
+
+            self.configuration (Configuration):
+                The configuration used for training.
+
+            self.fold (Fold): 
+                The fold used for training.
+
+            self.trainer (Trainer): 
+                The trainer used for training.
+            
+        Returns:
+            None
+
+        Example:
+            >>> from neuro_disease_detector.models.nnUNet.__init__ import Configuration, Fold, Trainer
+            >>> from neuro_disease_detector.models.nnUNet.nnUNet_pipeline import nnUNet
+            >>>
+            >>> dataset_id = "024"
+            >>> configuration = Configuration.FULL_3D
+            >>> fold = Fold.FOLD_5
+            >>> trainer = Trainer.EPOCHS_100
+            >>> nnUNet = nnUNet(dataset_id, configuration, fold, trainer)
+            >>> nnUNet.create_nnu_dataset()
+            >>> nnUNet.configure_environment()
+            >>> nnUNet.process_dataset()
+            >>> nnUNet.train_nnUNet()
+            >>> nnUNet.inference_test()
+        """
+
+        # Create the necessary directories for the output predictions
+        self.logger.info("Performing inference on test data...")
+        os.makedirs(self.test_results, exist_ok=True)
+        test_path = f"{self.nnUNet_datapath}/imagesTs"
+
+        # WHEN WE DO TEST WITH NNUNET, WE HAVE TO TAKE A LOOK IF WE CAN SEPARATE IN FLAIR, T1, T2
+        # Define the command to perform inference on the test data
+        command = ["nnUNetv2_predict", 
+                "-i", test_path, 
+                "-o", self.test_results, 
+                "-d", self.dataset_id,
+                "-c", self.configuration.value, 
+                "-tr", self.trainer.value,
+                "-f", self.fold.value]
+        
+        subprocess.run(command, env=os.environ, check=True)
+
+    def train_nnUNet(self) -> None:
+        """
+        Train the nnUNet model using the specified configuration, fold, and trainer.
+
+        Args:
+            self.dataset_id (str): 
+                The ID of the dataset.
+
+            self.configuration (Configuration): 
+                The configuration used for training.
+
+            self.fold (Fold): 
+                The fold used for training.
+
+            self.trainer (Trainer): 
+                The trainer used for training.
+
+        Returns:
+            None
+
+        Example:
+            >>> from neuro_disease_detector.models.nnUNet.__init__ import Configuration, Fold, Trainer
+            >>> from neuro_disease_detector.models.nnUNet.nnUNet_pipeline import nnUNet
+            >>>
+            >>> dataset_id = "024"
+            >>> configuration = Configuration.FULL_3D
+            >>> fold = Fold.FOLD_5
+            >>> trainer = Trainer.EPOCHS_100
+            >>> nnUNet = nnUNet(dataset_id, configuration, fold, trainer)
+            >>> nnUNet.create_nnu_dataset()
+            >>> nnUNet.configure_environment()
+            >>> nnUNet.process_dataset()
+            >>> nnUNet.train_nnUNet()
+        """
+
+        # Define the command to train the nnUNet model
+        self.logger.info(f"Training nnUNet model for fold{self.fold.value}...")
+        command = ["nnUNetv2_train", 
+                   self.dataset_id, 
+                   self.configuration.value, 
+                   self.fold.value, 
+                   "-tr", self.trainer.value]
+        
+        subprocess.run(command, env=os.environ, check=True)
+
+    def process_dataset(self) -> None:
+        """
+        Process the dataset using nnUNet.
+
+        Args:
+            self.nnUNet_preprocessed (str): 
+                The path to the preprocessed data directory.
+
+            self.dataset_id (str): 
+                The ID of the dataset.
+
+            self.dataset_name (str): 
+                The name of the dataset.
+
+        Returns:
+            None
+
+        Example:
+            >>> from neuro_disease_detector.models.nnUNet.__init__ import Configuration, Fold, Trainer
+            >>> from neuro_disease_detector.models.nnUNet.nnUNet_pipeline import nnUNet
+            >>>
+            >>> dataset_id = "024"
+            >>> configuration = Configuration.FULL_3D
+            >>> fold = Fold.FOLD_5
+            >>> trainer = Trainer.EPOCHS_100
+            >>> nnUNet = nnUNet(dataset_id, configuration, fold, trainer)
+            >>> nnUNet.create_nnu_dataset()
+            >>> nnUNet.configure_environment()
+            >>> nnUNet.process_dataset()
+        """
+
+        self.logger.info("Processing dataset...")
+        if os.path.exists(f"{self.nnUNet_preprocessed}/{self.dataset_name}"):
+            return
+        
+        # Define and run the command to preprocess the dataset
+        command = ["nnUNetv2_plan_and_preprocess", "-d", self.dataset_id, "--verify_dataset_integrity", "-np", "1"]
+        subprocess.run(command, env=os.environ, check=True)
+
+        # Copy the splits_final.json file to the appropriate directory
+        shutil.copy(CONFIG_NNUNET_SPLIT, f"{self.nnUNet_preprocessed}/{self.dataset_name}/splits_final.json")
+
+    def configure_environment(self) -> None:
+        """
+        Configure the environment variables for nnUNet.
+
+        Args:
+            self.nnUNet_raw (str): 
+                The path to the raw data directory.
+
+            self.nnUNet_preprocessed (str): 
+                The path to the preprocessed data directory.
+
+            self.nnUNet_results (str): 
+                The path to the results directory.
+
+        Returns:
+            None
+
+        Example:
+            >>> from neuro_disease_detector.models.nnUNet.__init__ import Configuration, Fold, Trainer
+            >>> from neuro_disease_detector.models.nnUNet.nnUNet_pipeline import nnUNet
+            >>>
+            >>> dataset_id = "024"
+            >>> configuration = Configuration.FULL_3D
+            >>> fold = Fold.FOLD_5
+            >>> trainer = Trainer.EPOCHS_100
+            >>> nnUNet = nnUNet(dataset_id, configuration, fold, trainer)
+            >>> nnUNet.create_nnu_dataset()
+            >>> nnUNet.configure_environment()
+        """
+
+        # Create the necessary directories for nnUNet
+        self.logger.info("Configuring nnUNet environment...")
+        os.makedirs(self.nnUNet_raw, exist_ok=True)
+        os.makedirs(self.nnUNet_preprocessed, exist_ok=True)
+        os.makedirs(self.nnUNet_results, exist_ok=True)
+
+        # Set the environment variables for nnUNet
+        os.environ["nnUNet_raw"] = self.nnUNet_raw
+        os.environ["nnUNet_preprocessed"] = self.nnUNet_preprocessed
+        os.environ["nnUNet_results"] = self.nnUNet_results
 
     def create_nnu_dataset(self) -> None:
         """
@@ -307,21 +606,10 @@ class nnUNet:
                 shutil.copy(mask_path, f"{self.nnUNet_datapath}/labels{train_test}/BRATS_{id}.nii.gz")
 
         # Copy the dataset.json file to the nnUNet dataset directory
-        #shutil.copy(CONFIG_NNUNET, f"{self.nnUNet_datapath}/dataset.json")
+        shutil.copy(CONFIG_NNUNET, f"{self.nnUNet_datapath}/dataset.json")
     
 def _remove_files(folder_path: str):
     """Removes all files in the folder that start with 'BRATS_'."""
     for file in os.listdir(folder_path):
         if file.startswith("BRATS_"):
             os.remove(f"{folder_path}/{file}")
-        
-
-
-if __name__ == "__main__":
-    import shutil
-    nnunet = nnUNet("023", Configuration.FULL_3D, Fold.FOLD_5, Trainer.EPOCHS_100)
-    nnunet.create_nnu_dataset()
-    #nnunet.configure_environment()
-    #nnunet.process_dataset()
-
-    # shutil.make_archive('nnu_net', 'zip', '/home/rodrigocarreira/MRI-Neurodegenerative-Disease-Detection/neuro_disease_detector/models/nnUNet/nnu_net')
