@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest  # Specifies the environment where the job will run (Ubuntu latest version)
     environment:
       name: release  # Name of the environment (used for deployment)
-      url: https://pypi.org/p/YNDRA  # URL of the PyPI package
+      url: https://pypi.org/p/NND  # URL of the PyPI package
 
     permissions:  # Define permissions for the workflow
       id-token: write  # Allows writing the ID token for authenticating with PyPI
@@ -25,7 +25,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4  # Uses the setup-python action to configure Python
         with:
-          python-version: "3.8"  # Specifies the Python version to use (3.8 in this case)
+          python-version: "3.10"  # Specifies the Python version to use (3.8 in this case)
 
       # Step 3: Install dependencies
       - name: Install dependencies
