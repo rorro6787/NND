@@ -1,11 +1,11 @@
 **Bachelor’s Thesis – University of Málaga (Sept 2024 – Jun 2025)**
 **Author:** Emilio Rodrigo Carreira Villalta ([emiliorodrigo.ecr@gmail.com](mailto:emiliorodrigo.ecr@gmail.com))
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/rorro6787/neurodegenerative-disease-detector)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/rorro6787/NND)
 [![PyPI Version](https://img.shields.io/pypi/v/nnd.svg)](https://pypi.org/project/nnd/)
 [![PyPI Python version](https://img.shields.io/pypi/pyversions/nnd.svg)](https://pypi.org/project/nnd/)
 [![PyPI License](https://img.shields.io/pypi/l/nnd.svg)](https://pypi.org/project/nnd/)
-[![CI](https://github.com/rorro6787/neurodegenerative-disease-detector/actions/workflows/test.yml/badge.svg)](https://github.com/rorro6787/neurodegenerative-disease-detector/actions/workflows/test.yml)
+[![CI](https://github.com/rorro6787/NND/actions/workflows/test.yml/badge.svg)](https://github.com/rorro6787/NND/actions/workflows/test.yml)
 
 Segmenting sclerosis lesions on 3‑D MRI volumes is a critical yet time‑consuming step in clinical workflows.
 This repository contains the open‑source code, experiments and analysis accompanying my bachelor’s thesis, which investigates the synergy between **YOLOv11** object detection and **nnUNet** semantic segmentation, enhanced by a novel 3‑D consensus‑ensemble strategy.
@@ -23,8 +23,8 @@ This repository contains the open‑source code, experiments and analysis accomp
 ### 1. Clone & install
 
 ```bash
-git clone https://github.com/rorro6787/neurodegenerative-disease-detector.git
-cd neurodegenerative-disease-detector
+git clone https://github.com/rorro6787/NND.git
+cd NND
 python3 -m venv venv
 source venv/bin/activate
 ```
@@ -32,9 +32,8 @@ source venv/bin/activate
 ### 2. Launch experiments
 
 ```bash
-cd models
-
 # Train the different YOLO and nnUNet models
+cd nnd/models
 python models_pipeline.py
 ```
 
@@ -51,7 +50,7 @@ You can observe the statistical analysis results at `notebooks/results/experimen
 ```text
 ├── .github/                  # Github Actions
 ├── information/              # Relevant Documents
-├── neuro_disease_detector/   # Main Library
+├── nnd/                      # Main Library
 ├── notebooks/                # Exploratory notebooks
 ├── picasso/                  # Picasso files used for Experiments
 ├── tests/                    # Test for the package
