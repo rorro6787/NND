@@ -2,6 +2,9 @@
 **Author:** Emilio Rodrigo Carreira Villalta ([emiliorodrigo.ecr@gmail.com](mailto:emiliorodrigo.ecr@gmail.com))
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/rorro6787/neurodegenerative-disease-detector)
+[![PyPI Version](https://img.shields.io/pypi/v/nnd.svg)](https://pypi.org/project/nnd/)
+[![PyPI Python version](https://img.shields.io/pypi/pyversions/nnd.svg)](https://pypi.org/project/nnd/)
+[![PyPI License](https://img.shields.io/pypi/l/nnd.svg)](https://pypi.org/project/nnd/)
 [![CI](https://github.com/rorro6787/neurodegenerative-disease-detector/actions/workflows/test.yml/badge.svg)](https://github.com/rorro6787/neurodegenerative-disease-detector/actions/workflows/test.yml)
 
 Segmenting sclerosis lesions on 3‑D MRI volumes is a critical yet time‑consuming step in clinical workflows.
