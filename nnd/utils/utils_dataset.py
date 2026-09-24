@@ -1,11 +1,21 @@
+import zipfile
+import os
 from nnd.logger import get_logger
 
-import pandas as pd
-import zipfile
-import gdown
-import os
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
+try:
+    import gdown
+except ImportError:
+    gdown = None
 
 logger = get_logger(__name__)
+
+MSLESSEG_TRAIN_DATASET_URL = "https://drive.google.com/uc?export=download&id=1TM4ciSeiyl-ri4_Jn4-aMOTDSSSHM6XB"
+MSLESSEG_TEST_DATASET_URL = "https://springernature.figshare.com/articles/dataset/MSLesSeg_baseline_and_benchmarking_of_a_new_Multiple_Sclerosis_Lesion_Segmentation_dataset/27919209"
 
 FOLD_TO_PATIENT = { "fold1": (1, 7), "fold2": (7, 14), "fold3": (14, 24), "fold4": (24, 41), "fold5": (41, 54) }
 TIMEPOINTS_PATIENT = [3,4,4,3,2,3,2,2,3,2,2,2,4,4,1,1,1,1,4,3,1,1,2,1,1,1,1,2,1,0,2,1,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,1,1,1,1,1,2]                      

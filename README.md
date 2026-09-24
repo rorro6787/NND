@@ -161,12 +161,18 @@ echo "nnUNet_results: $nnUNet_results"
 
 ### 3. Dataset Preparation
 
-The pipeline automatically handles dataset download and preprocessing:
+The pipeline uses the MSLesSeg (Multiple Sclerosis Lesion Segmentation) dataset:
 
-#### MSLesSeg Dataset
-- **Raw dataset**: Automatically downloaded from Google Drive (1.2GB)
-- **YOLO-formatted dataset**: Preprocessed version automatically downloaded (850MB)
-- **Storage location**: `./MSLesSeg-Dataset/` and `./MSLesSeg-Dataset-YOLO/`
+#### 1. Training Dataset (53 patients, 147 3D volumes)
+- **Raw dataset**: Downloaded from Google Drive: `https://drive.google.com/uc?export=download&id=1TM4ciSeiyl-ri4_Jn4-aMOTDSSSHM6XB`
+- **YOLO-formatted dataset**: Preprocessed 2D slices downloaded from Google Drive: `https://drive.google.com/uc?export=download&id=1sFl9kNsN4jShUACiwvKzBP9T_Q-kXSc4`
+- **Default Storage location**: `./MSLesSeg-Dataset/` and `./MSLesSeg-Dataset-YOLO/`
+
+#### 2. Official Benchmark Test Dataset (22 held-out test patients)
+- **Official Repository (Springer Nature Figshare)**:
+  [MSLesSeg Official Test Dataset (Figshare)](https://springernature.figshare.com/articles/dataset/MSLesSeg_baseline_and_benchmarking_of_a_new_Multiple_Sclerosis_Lesion_Segmentation_dataset/27919209)
+- **URL**: `https://springernature.figshare.com/articles/dataset/MSLesSeg_baseline_and_benchmarking_of_a_new_Multiple_Sclerosis_Lesion_Segmentation_dataset/27919209`
+- Contains the 22 independent held-out evaluation patients (1 mm³ isotropic FLAIR volumes, cropped MNI dimensions $182 \times 218 \times 182$ voxels).
 
 #### Manual Dataset Setup (Optional)
 If you prefer to handle datasets manually:
@@ -179,20 +185,48 @@ If you prefer to handle datasets manually:
 
 ### 4. Running the Complete Pipeline
 
-#### Basic Execution
-The main pipeline script orchestrates both YOLO and nnUNet training:
+#### 4.1 Cross-Validation Pipeline (5-fold)
+The main pipeline script orchestrates both YOLO and nnUNet 5-fold cross-validation:
 
 ```bash
 cd nnd/models
 python models_pipeline.py
 ```
 
-#### What This Script Does:
-1. **Downloads datasets** if not present locally
-2. **Trains nnUNet models** for all 5 folds with specified configuration
-3. **Trains YOLO models** with k-fold cross-validation 
-4. **Evaluates both models** and saves results to CSV files
-5. **Generates comprehensive metrics** including Dice scores, IoU, precision, recall
+#### 4.2 Training Models with 100% of Data
+To train each of the 10 models on 100% of the training dataset (all 53 patients, without cross-validation fold splitting), use `train_100_percent.py`:
+
+```bash
+# Train all 10 models sequentially on 100% data:
+python train_100_percent.py --model all
+
+# Or train a specific model:
+python train_100_percent.py --model nnUNet3D
+python train_100_percent.py --model nnUNet2D
+python train_100_percent.py --model Yolo3D      # 3D multi-plane model
+python train_100_percent.py --model Yolo2D-a    # 2D axial model
+```
+
+**Supported Models (10 Configurations):**
+- `nnUNet3D`: nnU-Net 3D full-resolution (`3d_fullres`, fold `all`)
+- `nnUNet2D`: nnU-Net 2D (`2d`, fold `all`)
+- `Yolo3D`: YOLOv11x-seg multi-plane 3D model (trained on 100% of axial+coronal+sagittal slices)
+- `Yolo3D-a`, `Yolo3D-c`, `Yolo3D-s`: YOLOv11x-seg 3D single-plane models (axial, coronal, sagittal)
+- `Yolo2D`: YOLOv11x-seg 2D multi-plane consensus ensemble (trains axial, coronal, and sagittal models on 100% data)
+- `Yolo2D-a`, `Yolo2D-c`, `Yolo2D-s`: YOLOv11x-seg 2D single-plane models (axial, coronal, sagittal)
+
+#### 4.3 Validating on the Official Held-Out Test Set (22 Patients)
+To evaluate the trained models on the 22 held-out patients from the official test dataset:
+
+```bash
+# Validate all 10 models on the official test set:
+python validate_test_set.py --model all --test_dir ./MSLesSeg-Test
+
+# Or validate a specific model:
+python validate_test_set.py --model Yolo3D --test_dir ./MSLesSeg-Test
+python validate_test_set.py --model nnUNet3D --test_dir ./MSLesSeg-Test
+```
+Outputs per-patient Dice (DSC), IoU, Precision, and Recall metrics, saves predicted 3D segmentation masks in NIfTI format, and writes aggregated summary statistics to CSV (`test_set_evaluation_results.csv`).
 
 #### Expected Runtime:
 - **YOLO training**: ~2-4 hours per fold (depending on GPU)
@@ -212,6 +246,7 @@ ls -la yolo_trainings/*/fold_*/weights/
 ```
 
 ### 5. Configuration Options
+
 
 #### Modifying Pipeline Parameters
 Edit the configuration section in `nnd/models/models_pipeline.py`:
